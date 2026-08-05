@@ -176,11 +176,16 @@ def api_os_list():
     aloc_por_frota = {a.codigo: a for a in FrotaAlocacao.query.all()}
     detalhes_por_os = {d.os: d for d in OsDetalhe.query.all()}
 
+    # só o histórico das frotas que têm O.S. aberta: reincidência, retrabalho e o
+    # aviso de "sem histórico" são todos por frota e só saem daqui pras O.S. abertas.
+    # Trazer a tabela inteira (dezenas de milhares de linhas) derrubava a conexão
+    # do pooler no meio do SELECT e o painel voltava 500.
+    veics = [v for (v,) in db.session.query(OsAberta.veic).distinct()]
     hist_rows = db.session.query(
         OsHistorico.os, OsHistorico.veic, OsHistorico.data_abertura,
         OsHistorico.horas_parada, OsHistorico.sistema, OsHistorico.problema,
         OsHistorico.texto, OsHistorico.itens,
-    ).all()
+    ).filter(OsHistorico.veic.in_(veics)).all() if veics else []
 
     def _itens_hist(h):
         return json.loads(h.itens) if h.itens else [[h.sistema, h.problema]]
