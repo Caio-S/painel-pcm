@@ -52,9 +52,11 @@ def _prob(row):
 
 
 def fetch_os_abertas():
-    """O.S. em aberto (Aberta/Execução) — mesmo filtro já validado em produção no
-    Controle PCM (db_empresa.py), preferido a filtrar por data_hora_liberacao IS NULL
-    porque usa o campo de status de negócio diretamente."""
+    """O.S. em aberto (Aberta = A, Em Execução = E) — filtra por codigo_status (código
+    curto e estável) em vez do texto de descricao_status. Achado em produção: o texto
+    real é "Em Execução", não "Execução"/"Execucao" como o filtro do Controle PCM
+    (db_empresa.py, de onde este veio) assumia — isso excluía silenciosamente toda
+    O.S. em execução do sync (ex.: frota 62515, O.S. 553935)."""
     empresas = _empresas()
     conn = _conn()
     try:
@@ -68,7 +70,7 @@ def fetch_os_abertas():
                        descricao_servico, descricao_solicitante, data_programacao
                 FROM vw_ordem_servico_frota
                 WHERE id_empresa IN ({_in_clause(empresas)})
-                  AND descricao_status IN ('Aberta', 'Execucao', 'Execução')
+                  AND codigo_status IN ('A', 'E')
                 """,
                 empresas,
             )
