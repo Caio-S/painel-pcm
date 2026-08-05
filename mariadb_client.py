@@ -56,7 +56,12 @@ def fetch_os_abertas():
     curto e estável) em vez do texto de descricao_status. Achado em produção: o texto
     real é "Em Execução", não "Execução"/"Execucao" como o filtro do Controle PCM
     (db_empresa.py, de onde este veio) assumia — isso excluía silenciosamente toda
-    O.S. em execução do sync (ex.: frota 62515, O.S. 553935)."""
+    O.S. em execução do sync (ex.: frota 62515, O.S. 553935).
+
+    Também exige codigo_situacao_veiculo = 'P' (Parada) — confirmado direto no banco
+    que existe O.S. aberta/em execução com a frota marcada como 'R' (Rodando): tarefa
+    que não imobiliza o equipamento. O painel é sobre equipamento parado, então essas
+    não devem entrar."""
     empresas = _empresas()
     conn = _conn()
     try:
@@ -71,6 +76,7 @@ def fetch_os_abertas():
                 FROM vw_ordem_servico_frota
                 WHERE id_empresa IN ({_in_clause(empresas)})
                   AND codigo_status IN ('A', 'E')
+                  AND codigo_situacao_veiculo = 'P'
                 """,
                 empresas,
             )
