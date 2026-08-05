@@ -233,6 +233,10 @@ def api_os_list():
         item["ativ"] = a.atividade if a else ""
         item["fr"] = a.frente if a else ""
         item["respFr"] = a.responsavel if a else ""
+        # o responsável não é mais digitado por O.S.: vem do responsável da frente,
+        # cadastrado uma vez em Alocação de frota. Resolvido aqui pra valer igual no
+        # painel, na TV, no PDF, na cobrança e no agrupamento por responsável.
+        item["resp"] = item["resp"] or item["respFr"]
         item["frente"] = _frente_label(a) or "SEM FRENTE DEFINIDA"
         item["semHistorico"] = o.veic not in frotas_com_historico
         item["_ab_dt"] = o.ab
@@ -325,8 +329,6 @@ def api_os_patch(os_num):
 
     if "classe" in payload:
         d.classe = payload["classe"] or "NAO"
-    if "resp" in payload:
-        d.resp = payload["resp"] or ""
     if "detalhe" in payload:
         d.detalhe = payload["detalhe"] or ""
     if "prevLib" in payload:
@@ -347,21 +349,9 @@ def api_os_patch(os_num):
     if "mecanico" in mo: d.mo_mecanico = mo["mecanico"] or ""
     if "causa" in mo: d.mo_causa = mo["causa"] or ""
 
-    aloc = payload.get("aloc")
-    if aloc is not None:
-        o = db.session.get(OsAberta, os_num)
-        ativ, fr, resp, loc = (aloc.get("ativ") or "").strip(), (aloc.get("fr") or "").strip(), \
-            (aloc.get("resp") or "").strip(), (aloc.get("loc") or "").strip()
-        a = db.session.get(FrotaAlocacao, o.veic)
-        if not any([ativ, fr, resp, loc]):
-            if a:
-                db.session.delete(a)
-        else:
-            if not a:
-                a = FrotaAlocacao(codigo=o.veic)
-                db.session.add(a)
-            a.atividade, a.frente, a.responsavel, a.local = ativ, fr, resp, loc
-
+    # alocação não se mexe daqui: é da frota, não da O.S., e tem tela e endpoints
+    # próprios (/api/frota/<codigo>/alocacao). Editar por O.S. apagava o local, que
+    # a ficha nem mostrava.
     db.session.commit()
     return jsonify(d.to_dict())
 

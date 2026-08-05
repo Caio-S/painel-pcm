@@ -246,25 +246,16 @@ function abrir(os) {
       Para corrigir a leitura do texto, cadastre um termo em <b>Classificação</b> — vale para todas as O.S.</p>
   </div>
 
-  <div class="fs"><h4>Alocação do equipamento</h4>
-    <div class="row3">
-      <div class="f"><label>Atividade</label><input id="fAtiv" list="dlAtiv" value="${esc(o.ativ)}" placeholder="Transbordo, colheita, transporte"></div>
-      <div class="f"><label>Frente</label><input id="fFr" list="dlFr" value="${esc(o.fr)}" placeholder="F-1"></div>
-      <div class="f"><label>Responsável da frente</label><input id="fRespFr" list="dlResp" value="${esc(o.respFr)}"></div>
-    </div>
-    <p class="hint">Vale para a frota ${o.veic} em todas as O.S. — alimenta o relatório de disponibilidade por frente.</p></div>
-
   <div class="fs"><h4>Acompanhamento</h4>
     <div class="row">
-      <div class="f"><label>Responsável pelo acompanhamento</label><input id="fResp" list="dlResp" value="${esc(o.resp)}" placeholder="Quem cobra e responde por esta O.S."></div>
       <div class="f"><label>Pendência</label>
         <div class="picks" id="picks">${Object.keys(CONSTS.classes).filter(k => k !== "NAO").map(k => `<button class="pick ${o.classe === k ? 'on' : ''}" data-k="${k}">${CONSTS.classes[k].lbl}</button>`).join("")}</div></div>
-    </div>
-    <div class="row">
-      <div class="f"><label>O que exatamente está travando</label>
-        <textarea id="fDetalhe" placeholder="Ex.: máquina montada, aguardando só a bomba hidráulica">${esc(o.detalhe)}</textarea></div>
       <div class="f"><label>Previsão de liberação do equipamento</label><input type="datetime-local" id="fPrevLib" value="${li(o.prevLib)}"></div>
-    </div></div>
+    </div>
+    <div class="f"><label>O que exatamente está travando</label>
+      <textarea id="fDetalhe" class="alto" placeholder="Ex.: máquina montada, aguardando só a bomba hidráulica">${esc(o.detalhe)}</textarea></div>
+    <p class="hint">Responsável: <b>${esc(o.respFr) || "sem responsável na frente"}</b> — vem da frente da frota ${o.veic},
+      cadastrada em <b>Alocação de frota</b>, que é onde atividade, frente e responsável se alteram.</p></div>
 
   <div class="fs" id="boxMat" style="display:${o.classe === "MATERIAL" ? "block" : "none"}">
     <h4>Material — solicitação, pedido e ação pendente</h4>
@@ -323,11 +314,10 @@ async function salvarModal() {
   const sel = mBody.querySelector("#picks .pick.on");
   let acao = v("fAcao"); if (acao === "__outra") acao = v("fAcaoTxt");
   const payload = {
-    classe: sel ? sel.dataset.k : "NAO", resp: v("fResp"), detalhe: v("fDetalhe"),
+    classe: sel ? sel.dataset.k : "NAO", detalhe: v("fDetalhe"),
     prevLib: v("fPrevLib") ? new Date(v("fPrevLib")).toISOString() : "",
     item: { peca: v("fPeca"), sol: v("fSol"), solData: v("fSolD"), ped: v("fPed"), pedData: v("fPedD"), acao, acaoResp: v("fAcaoResp"), fornec: v("fForn"), previsao: v("fPrev") },
     mo: { mecanico: v("fMec"), causa: v("fCausa") },
-    aloc: { ativ: v("fAtiv"), fr: v("fFr"), resp: v("fRespFr"), loc: "" },
   };
   try {
     await api(`/os/${encodeURIComponent(abertaId)}`, { method: "PATCH", body: JSON.stringify(payload) });
