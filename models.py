@@ -22,7 +22,7 @@ class OsAberta(db.Model):
     (ou importação manual de planilha). O.S. cadastradas manualmente ficam com
     origem='manual' e não são apagadas pelo sync."""
 
-    __tablename__ = "os_aberta"
+    __tablename__ = "pcm_os_aberta"
 
     os = db.Column(db.String(20), primary_key=True)
     veic = db.Column(db.String(20), nullable=False, index=True)
@@ -56,7 +56,7 @@ class OsHistorico(db.Model):
     retrabalho. Alimentado pelo sync com o banco (janela recente) e/ou importação
     manual de histórico. Upsert por `os`, nunca duplica."""
 
-    __tablename__ = "os_historico"
+    __tablename__ = "pcm_os_historico"
 
     os = db.Column(db.String(20), primary_key=True)
     veic = db.Column(db.String(20), nullable=False, index=True)
@@ -84,7 +84,7 @@ class Frota(db.Model):
     """Cache da frota (dimensão de equipamento) — alimentada pelo sync
     (vw_bi_fluxo_dFrota) e usada na tela de Alocação e na classificação por família."""
 
-    __tablename__ = "frota"
+    __tablename__ = "pcm_frota"
 
     codigo = db.Column(db.String(20), primary_key=True)
     modelo = db.Column(db.String(255), default="")
@@ -104,7 +104,7 @@ class OsDetalhe(db.Model):
     mão de obra, previsão de liberação). Independente de OsAberta: sobrevive a
     reimportações/sync mesmo que a O.S. suma da lista de abertas."""
 
-    __tablename__ = "os_detalhe"
+    __tablename__ = "pcm_os_detalhe"
 
     os = db.Column(db.String(20), primary_key=True)
     classe = db.Column(db.String(20), default="NAO")
@@ -162,10 +162,10 @@ class OsDetalhe(db.Model):
 
 
 class OsRetorno(db.Model):
-    __tablename__ = "os_retorno"
+    __tablename__ = "pcm_os_retorno"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    os = db.Column(db.String(20), db.ForeignKey("os_detalhe.os"), nullable=False, index=True)
+    os = db.Column(db.String(20), db.ForeignKey("pcm_os_detalhe.os"), nullable=False, index=True)
     em = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     txt = db.Column(db.Text, nullable=False)
     autor = db.Column(db.String(120), default="PCM")
@@ -175,7 +175,7 @@ class OsRetorno(db.Model):
 
 
 class FrotaAlocacao(db.Model):
-    __tablename__ = "frota_alocacao"
+    __tablename__ = "pcm_frota_alocacao"
 
     codigo = db.Column(db.String(20), primary_key=True)
     atividade = db.Column(db.String(255), default="")
@@ -191,7 +191,7 @@ class FrotaAlocacao(db.Model):
 
 
 class Contato(db.Model):
-    __tablename__ = "contato"
+    __tablename__ = "pcm_contato"
 
     nome = db.Column(db.String(120), primary_key=True)
     tel = db.Column(db.String(120), default="")
@@ -207,7 +207,7 @@ class Contato(db.Model):
 
 
 class RegraClassificacao(db.Model):
-    __tablename__ = "regra_classificacao"
+    __tablename__ = "pcm_regra_classificacao"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     termo = db.Column(db.String(255), nullable=False)
@@ -223,7 +223,7 @@ class Meta(db.Model):
     """Config escalar chave/valor: sla, groupBy, tvSeg, reincDias, checkpoint do
     sync incremental de histórico, flag de logo customizada."""
 
-    __tablename__ = "meta"
+    __tablename__ = "pcm_meta"
 
     chave = db.Column(db.String(60), primary_key=True)
     valor = db.Column(db.Text)

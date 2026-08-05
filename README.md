@@ -25,23 +25,22 @@ O SQLite local (`painel_pcm.db`) é criado automaticamente na primeira execuçã
 
 ## Deploy (Render + Supabase)
 
-1. Crie um projeto no [Supabase](https://supabase.com).
-2. Copie a connection string do **Connection Pooling** (Settings → Database → Connection
-   pooling, modo "Session", porta 5432) — não a conexão direta (`db.xxx.supabase.co`), que é
-   IPv6-only e falha em redes sem IPv6. Formato:
-   ```
-   postgresql://postgres.<project-ref>:[SENHA]@aws-0-<região>.pooler.supabase.com:5432/postgres
-   ```
-   Se a senha tiver caracteres especiais (`@`, `#` etc.), faça o URL-encode (ex.: `@` → `%40`).
-3. Crie um Web Service no [Render](https://render.com) apontando para este repositório (ele
+**Banco**: reaproveita o mesmo projeto Supabase do [Catálogo CH570](https://github.com/Caio-S/catalogo)
+(plano free do Supabase permite só 2 projetos por conta, e Catálogo + CTT já ocupavam os dois).
+Todas as tabelas deste app usam prefixo **`pcm_`** (`pcm_os_aberta`, `pcm_meta` etc.) — o CTT já
+faz o mesmo com prefixo `ctt_` no mesmo projeto, então os três apps coexistem sem colidir.
+Use a **mesma `DATABASE_URL`** que está em `catalogo/.env` (pooler em modo *transaction*, porta
+6543 — por isso `SQLALCHEMY_ENGINE_OPTIONS` já desativa prepared statements, igual ao catalogo).
+
+1. Crie um Web Service no [Render](https://render.com) apontando para este repositório (ele
    detecta o `render.yaml`).
-4. Preencha no Render as env vars marcadas como `sync: false` (não vêm do `render.yaml`):
+2. Preencha no Render as env vars marcadas como `sync: false` (não vêm do `render.yaml`):
    - `DATABASE_URL` — a connection string do Supabase acima.
    - `MARIADB_HOST`, `MARIADB_USER`, `MARIADB_PASS`, `MARIADB_DB` — acesso ao MySQL da empresa
-     (mesmo banco usado pelo [bot do WhatsApp PCM] e pelo Controle PCM, host
+     (mesmo banco usado pelo bot do WhatsApp PCM e pelo Controle PCM, host
      `rdscontroladoria-read.grupojapungu.com`, somente leitura).
-5. `SECRET_KEY` é gerada automaticamente pelo Render (`generateValue: true`).
-6. Depois do primeiro deploy, abra o painel e clique em **Atualizar agora** — isso popula a
+3. `SECRET_KEY` é gerada automaticamente pelo Render (`generateValue: true`).
+4. Depois do primeiro deploy, abra o painel e clique em **Atualizar agora** — isso popula a
    base (O.S. abertas + frota na hora, histórico em segundo plano).
 
 ## Estrutura
