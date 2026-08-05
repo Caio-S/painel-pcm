@@ -80,6 +80,19 @@ def set_meta(chave, valor):
     row.valor = valor
 
 
+@app.url_defaults
+def _versao_do_estatico(endpoint, values):
+    """Carimba ?v=<mtime> em todo url_for('static'). Sem isso o navegador segurava
+    o core.js antigo depois do deploy e a tela continuava com o comportamento
+    velho, mesmo com o código novo no ar."""
+    if endpoint != "static" or "filename" not in values:
+        return
+    try:
+        values["v"] = int(os.stat(os.path.join(app.static_folder, values["filename"])).st_mtime)
+    except OSError:
+        pass
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
