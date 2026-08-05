@@ -1,0 +1,1574 @@
+{
+  "data_relatorio": "2026-08-05",
+  "fonte": "Relatórios de disponibilidade de frota (PCM) de 05/08/2026",
+  "frotas": [
+    {
+      "codigo": "22203",
+      "atividade": "TRANSBORDO",
+      "frente": "F-6 RUBIATABA",
+      "local": "9605",
+      "responsavel": "",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "22220",
+      "atividade": "TRANSBORDO",
+      "frente": "F-6 RUBIATABA",
+      "local": "9605",
+      "responsavel": "",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "22270",
+      "atividade": "TRANSBORDO",
+      "frente": "F-6 RUBIATABA",
+      "local": "9605",
+      "responsavel": "",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "22271",
+      "atividade": "TRANSBORDO",
+      "frente": "F-6 RUBIATABA",
+      "local": "9605",
+      "responsavel": "",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "22510",
+      "atividade": "COLHEDORA",
+      "frente": "F-6 RUBIATABA FAZ. FUNDÃO",
+      "local": "9605",
+      "responsavel": "",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "22521",
+      "atividade": "COLHEDORA",
+      "frente": "F-6 RUBIATABA FAZ. FUNDÃO",
+      "local": "9605",
+      "responsavel": "",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "22525",
+      "atividade": "COLHEDORA",
+      "frente": "F-6 RUBIATABA FAZ. FUNDÃO",
+      "local": "9605",
+      "responsavel": "",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "46129",
+      "atividade": "MUNCK",
+      "frente": "",
+      "local": "OFICINA",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Assistência (10).pdf"
+    },
+    {
+      "codigo": "46147",
+      "atividade": "PIPA",
+      "frente": "",
+      "local": "POTENCIA DIE.",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Pipas (26).pdf"
+    },
+    {
+      "codigo": "46537",
+      "atividade": "COLHEITABILIDADE",
+      "frente": "FAZ. SUCURI E CAJAMANGA",
+      "local": "9620",
+      "responsavel": "JOSÉ RONALDO",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "46579",
+      "atividade": "CARREGADEIRA",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "JOSE RONALDO",
+      "origem": "Linha Amr. (16).pdf"
+    },
+    {
+      "codigo": "60400",
+      "atividade": "QUADRICICLO",
+      "frente": "PÁTIO INDUSTRIAL",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "60401",
+      "atividade": "QUADRICICLO",
+      "frente": "PÁTIO INDUSTRIAL",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "60403",
+      "atividade": "QUADRICICLO",
+      "frente": "PÁTIO INDUSTRIAL",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "60500",
+      "atividade": "MANUTENÇÃO EXTERNA",
+      "frente": "",
+      "local": "SUECIA - ITUMBIARA",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60502",
+      "atividade": "DEDICADO",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60507",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9367",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60508",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60510",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60511",
+      "atividade": "DEDICADO",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60512",
+      "atividade": "DEDICADO",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60513",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9602",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60514",
+      "atividade": "DEDICADO",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60515",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60516",
+      "atividade": "MANUTENÇÃO EXTERNA",
+      "frente": "",
+      "local": "SUECIA - UBE",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60517",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60518",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9550",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60519",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9009",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60520",
+      "atividade": "MANUTENÇÃO EXTERNA",
+      "frente": "",
+      "local": "ONÍLIO",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60521",
+      "atividade": "CAMINHÃO PRANCHA",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Assistência (10).pdf"
+    },
+    {
+      "codigo": "60522",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9602",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60523",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9481",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60524",
+      "atividade": "CAMINHÃO PRANCHA",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Assistência (10).pdf"
+    },
+    {
+      "codigo": "60525",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9550",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60526",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60527",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9367",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60528",
+      "atividade": "MANUTENÇÃO EXTERNA",
+      "frente": "",
+      "local": "ONÍLIO",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60529",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9009",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60530",
+      "atividade": "MANUTENÇÃO EXTERNA",
+      "frente": "",
+      "local": "SUECIA - UBE",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60531",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9481",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60532",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9481",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60533",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9481",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60534",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60535",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9550",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60536",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9367",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60541",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9602",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60542",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60543",
+      "atividade": "CAMINHÃO PRANCHA",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Assistência (10).pdf"
+    },
+    {
+      "codigo": "60544",
+      "atividade": "MANUTENÇÃO EXTERNA",
+      "frente": "",
+      "local": "SUECIA - UBE",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60545",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9481",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60546",
+      "atividade": "MANUTENÇÃO EXTERNA",
+      "frente": "",
+      "local": "BASE",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60547",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9481",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60548",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9481",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60549",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9481",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60550",
+      "atividade": "MANUTENÇÃO EXTERNA",
+      "frente": "",
+      "local": "SUECIA - ITUMBIARA",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60551",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9481",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60552",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9340",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60553",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9481",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60554",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9481",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60555",
+      "atividade": "CANAVIEIRO",
+      "frente": "",
+      "local": "9481",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "60805",
+      "atividade": "DRONE",
+      "frente": "PÁTIO INDUSTRIAL",
+      "local": "9012",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "60809",
+      "atividade": "OFICINA",
+      "frente": "",
+      "local": "INGÁ",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Assistência (10).pdf"
+    },
+    {
+      "codigo": "60810",
+      "atividade": "OFICINA",
+      "frente": "",
+      "local": "FRENTE 1",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Assistência (10).pdf"
+    },
+    {
+      "codigo": "60814",
+      "atividade": "APOIO",
+      "frente": "",
+      "local": "ALMOXARIFADO",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Assistência (10).pdf"
+    },
+    {
+      "codigo": "60815",
+      "atividade": "BORRACHARIA",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Assistência (10).pdf"
+    },
+    {
+      "codigo": "60817",
+      "atividade": "OFICINA",
+      "frente": "",
+      "local": "FRENTE 4",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Assistência (10).pdf"
+    },
+    {
+      "codigo": "60818",
+      "atividade": "OFICINA",
+      "frente": "",
+      "local": "FRENTE 2",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Assistência (10).pdf"
+    },
+    {
+      "codigo": "60819",
+      "atividade": "OFICINA",
+      "frente": "",
+      "local": "FRENTE 5",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Assistência (10).pdf"
+    },
+    {
+      "codigo": "60820",
+      "atividade": "OFICINA",
+      "frente": "",
+      "local": "FRENTE 3",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Assistência (10).pdf"
+    },
+    {
+      "codigo": "60901",
+      "atividade": "PIPA ARIZONA",
+      "frente": "",
+      "local": "9370",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "60902",
+      "atividade": "PIPA ARIZONA",
+      "frente": "",
+      "local": "9370",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "60903",
+      "atividade": "PIPA ARIZONA",
+      "frente": "",
+      "local": "ITUMBIARA",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "60904",
+      "atividade": "PIPA",
+      "frente": "",
+      "local": "OFICINA",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Pipas (26).pdf"
+    },
+    {
+      "codigo": "60905",
+      "atividade": "PIPA",
+      "frente": "",
+      "local": "9445",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Pipas (26).pdf"
+    },
+    {
+      "codigo": "60906",
+      "atividade": "PIPA",
+      "frente": "",
+      "local": "OFICINA",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Pipas (26).pdf"
+    },
+    {
+      "codigo": "60907",
+      "atividade": "PIPA",
+      "frente": "",
+      "local": "APOIO",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Pipas (26).pdf"
+    },
+    {
+      "codigo": "60908",
+      "atividade": "PIPA",
+      "frente": "",
+      "local": "FRENTE 3",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Pipas (26).pdf"
+    },
+    {
+      "codigo": "60909",
+      "atividade": "PIPA",
+      "frente": "",
+      "local": "FRENTE 1",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Pipas (26).pdf"
+    },
+    {
+      "codigo": "60910",
+      "atividade": "PIPA",
+      "frente": "",
+      "local": "FRENTE 4",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Pipas (26).pdf"
+    },
+    {
+      "codigo": "60911",
+      "atividade": "PIPA",
+      "frente": "",
+      "local": "OFICINA",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Pipas (26).pdf"
+    },
+    {
+      "codigo": "60912",
+      "atividade": "PIPA",
+      "frente": "",
+      "local": "FRENTE 2",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Pipas (26).pdf"
+    },
+    {
+      "codigo": "60913",
+      "atividade": "PIPA ARIZONA",
+      "frente": "",
+      "local": "9464",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "60914",
+      "atividade": "PIPA",
+      "frente": "",
+      "local": "OFICINA",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Pipas (26).pdf"
+    },
+    {
+      "codigo": "60915",
+      "atividade": "PIPA",
+      "frente": "",
+      "local": "FRENTE 2",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Pipas (26).pdf"
+    },
+    {
+      "codigo": "60916",
+      "atividade": "PIPA",
+      "frente": "",
+      "local": "BASE",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Pipas (26).pdf"
+    },
+    {
+      "codigo": "60917",
+      "atividade": "PIPA ARIZONA",
+      "frente": "",
+      "local": "9014",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "61002",
+      "atividade": "BORRACHARIA",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Assistência (10).pdf"
+    },
+    {
+      "codigo": "61149",
+      "atividade": "COMBOIO",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Assistência (10).pdf"
+    },
+    {
+      "codigo": "61150",
+      "atividade": "COMBOIO",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Assistência (10).pdf"
+    },
+    {
+      "codigo": "61151",
+      "atividade": "COMBOIO",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Assistência (10).pdf"
+    },
+    {
+      "codigo": "61152",
+      "atividade": "COMBOIO",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Assistência (10).pdf"
+    },
+    {
+      "codigo": "61153",
+      "atividade": "COMBOIO",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Assistência (10).pdf"
+    },
+    {
+      "codigo": "61250",
+      "atividade": "CAÇAMBA",
+      "frente": "",
+      "local": "OFICINA",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Linha Amr. (16).pdf"
+    },
+    {
+      "codigo": "61251",
+      "atividade": "CAÇAMBA",
+      "frente": "",
+      "local": "BASE",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Linha Amr. (16).pdf"
+    },
+    {
+      "codigo": "61252",
+      "atividade": "CAÇAMBA",
+      "frente": "",
+      "local": "OFICINA",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Linha Amr. (16).pdf"
+    },
+    {
+      "codigo": "61253",
+      "atividade": "CAÇAMBA",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Linha Amr. (16).pdf"
+    },
+    {
+      "codigo": "61254",
+      "atividade": "CAÇAMBA",
+      "frente": "",
+      "local": "DIFUSOR",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Linha Amr. (16).pdf"
+    },
+    {
+      "codigo": "62001",
+      "atividade": "CARREGADEIRA",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "JOSE RONALDO",
+      "origem": "Linha Amr. (16).pdf"
+    },
+    {
+      "codigo": "62002",
+      "atividade": "CARREGADEIRA",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "JOSE RONALDO",
+      "origem": "Linha Amr. (16).pdf"
+    },
+    {
+      "codigo": "62200",
+      "atividade": "DEDICADO",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "62204",
+      "atividade": "TRANSBORDO",
+      "frente": "F-5",
+      "local": "9481",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62208",
+      "atividade": "CATA MATO",
+      "frente": "FAZ RAMADA",
+      "local": "9526",
+      "responsavel": "JOSÉ RONALDO",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "62209",
+      "atividade": "CATA MATO",
+      "frente": "FAZ RAMADA",
+      "local": "9526",
+      "responsavel": "JOSÉ RONALDO",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "62210",
+      "atividade": "CATA MATO",
+      "frente": "FAZ RAMADA",
+      "local": "9526",
+      "responsavel": "JOSÉ RONALDO",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "62211",
+      "atividade": "CATA MATO",
+      "frente": "FAZ RAMADA",
+      "local": "9526",
+      "responsavel": "JOSÉ RONALDO",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "62212",
+      "atividade": "CATA MATO",
+      "frente": "FAZ RAMADA",
+      "local": "9526",
+      "responsavel": "JOSÉ RONALDO",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "62213",
+      "atividade": "COMBATE A FORMIGA",
+      "frente": "SÃO PAULO",
+      "local": "9411",
+      "responsavel": "RODRIGO",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "62214",
+      "atividade": "CATA MATO",
+      "frente": "FAZ RAMADA",
+      "local": "9526",
+      "responsavel": "JOSÉ RONALDO",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "62215",
+      "atividade": "TRANSBORDO",
+      "frente": "F-4",
+      "local": "9367",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62217",
+      "atividade": "TRANSBORDO",
+      "frente": "F-5",
+      "local": "9481",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62219",
+      "atividade": "TRANSBORDO",
+      "frente": "F-3",
+      "local": "9998",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62220",
+      "atividade": "TRANSBORDO",
+      "frente": "F-5",
+      "local": "9481",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62221",
+      "atividade": "KIT ACEIRO",
+      "frente": "FAZ. SÃO BENTO",
+      "local": "9536",
+      "responsavel": "JOSÉ RONALDO",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "62222",
+      "atividade": "TRANSBORDO",
+      "frente": "F-4",
+      "local": "9367",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62225",
+      "atividade": "CATA MATO",
+      "frente": "FAZ RAMADA",
+      "local": "9526",
+      "responsavel": "JOSÉ RONALDO",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "62228",
+      "atividade": "TRANSBORDO",
+      "frente": "F-1",
+      "local": "9602",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62229",
+      "atividade": "TRANSBORDO",
+      "frente": "F-3",
+      "local": "9009",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62230",
+      "atividade": "TRANSBORDO",
+      "frente": "F-1",
+      "local": "9602",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62232",
+      "atividade": "TRANSBORDO",
+      "frente": "F-1",
+      "local": "9602",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62233",
+      "atividade": "TRANSBORDO",
+      "frente": "F-2",
+      "local": "9550",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62234",
+      "atividade": "TRANSBORDO",
+      "frente": "F-3",
+      "local": "9009",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62237",
+      "atividade": "TRANSBORDO",
+      "frente": "F-1",
+      "local": "9602",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62238",
+      "atividade": "TRANSBORDO",
+      "frente": "F-4",
+      "local": "9367",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62239",
+      "atividade": "TRANSBORDO",
+      "frente": "F-5",
+      "local": "9481",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62240",
+      "atividade": "TRANSBORDO",
+      "frente": "F-3",
+      "local": "9009",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62241",
+      "atividade": "TRANSBORDO",
+      "frente": "F-3",
+      "local": "9009",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62242",
+      "atividade": "TRANSBORDO",
+      "frente": "F-1",
+      "local": "9602",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62243",
+      "atividade": "TRANSBORDO",
+      "frente": "F-1",
+      "local": "9602",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62245",
+      "atividade": "TRANSBORDO",
+      "frente": "F-1",
+      "local": "9602",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62247",
+      "atividade": "TRANSBORDO",
+      "frente": "F-5",
+      "local": "9481",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62249",
+      "atividade": "TRANSBORDO",
+      "frente": "F-3",
+      "local": "9009",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62250",
+      "atividade": "TRANSBORDO",
+      "frente": "F-4",
+      "local": "9367",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62251",
+      "atividade": "REFLORESTAMENTO",
+      "frente": "FAZ. SANTA ROSA",
+      "local": "9565",
+      "responsavel": "JOSÉ RONALDO",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "62252",
+      "atividade": "TRANSBORDO",
+      "frente": "F-3",
+      "local": "9009",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62253",
+      "atividade": "TRANSBORDO",
+      "frente": "F-4",
+      "local": "9367",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62254",
+      "atividade": "TRANSBORDO",
+      "frente": "F-3",
+      "local": "9009",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62256",
+      "atividade": "TRANSBORDO",
+      "frente": "F-4",
+      "local": "9367",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62257",
+      "atividade": "TRANSBORDO",
+      "frente": "F-5",
+      "local": "9481",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62258",
+      "atividade": "CATA MATO",
+      "frente": "FAZ RAMADA",
+      "local": "9526",
+      "responsavel": "JOSÉ RONALDO",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "62259",
+      "atividade": "TRANSBORDO",
+      "frente": "F-5",
+      "local": "9998",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62260",
+      "atividade": "TRANSBORDO",
+      "frente": "F-4",
+      "local": "9367",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62262",
+      "atividade": "DEDICADO",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "ANTONIO SILVA",
+      "origem": "Caminhões (14).pdf"
+    },
+    {
+      "codigo": "62263",
+      "atividade": "TRANSBORDO",
+      "frente": "F-2",
+      "local": "9550",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62264",
+      "atividade": "TRANSBORDO",
+      "frente": "F-2",
+      "local": "9550",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62265",
+      "atividade": "TRANSBORDO",
+      "frente": "F-2",
+      "local": "9550",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62266",
+      "atividade": "TRANSBORDO",
+      "frente": "F-2",
+      "local": "9550",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62271",
+      "atividade": "TRANSBORDO",
+      "frente": "F-1",
+      "local": "9602",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62276",
+      "atividade": "TRANSBORDO",
+      "frente": "F-2",
+      "local": "9550",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62277",
+      "atividade": "TRANSBORDO",
+      "frente": "F-2",
+      "local": "9550",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62279",
+      "atividade": "TRANSBORDO",
+      "frente": "F-2",
+      "local": "9550",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62280",
+      "atividade": "TRANSBORDO",
+      "frente": "F-5",
+      "local": "9481",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62281",
+      "atividade": "TRANSBORDO",
+      "frente": "F-5",
+      "local": "9481",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62282",
+      "atividade": "TRANSBORDO",
+      "frente": "F-4",
+      "local": "9367",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62283",
+      "atividade": "TRANSBORDO",
+      "frente": "F-5",
+      "local": "9481",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Transbordos (11).pdf"
+    },
+    {
+      "codigo": "62503",
+      "atividade": "COLHEDORA",
+      "frente": "F-1 FAZ. MONTE AZUL",
+      "local": "9602",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "62504",
+      "atividade": "COLHEDORA",
+      "frente": "F-5 SÃO JOÃO",
+      "local": "9481",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "62505",
+      "atividade": "COLHEDORA",
+      "frente": "F-4 PONTINHAS",
+      "local": "9367",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "62510",
+      "atividade": "COLHEDORA",
+      "frente": "F-2 FAZ. CASCALHO RICO",
+      "local": "9550",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "62512",
+      "atividade": "COLHEDORA",
+      "frente": "F-2 FAZ. CASCALHO RICO",
+      "local": "9550",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "62513",
+      "atividade": "COLHEDORA",
+      "frente": "F-5 SÃO JOÃO",
+      "local": "9481",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "62514",
+      "atividade": "COLHEDORA",
+      "frente": "F-3 FAZ. SERTÃOZINHO",
+      "local": "9009",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "62515",
+      "atividade": "COLHEDORA",
+      "frente": "F-1 FAZ. MONTE AZUL",
+      "local": "9602",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "62516",
+      "atividade": "COLHEDORA",
+      "frente": "F-2 FAZ. CASCALHO RICO",
+      "local": "9550",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "62517",
+      "atividade": "COLHEDORA",
+      "frente": "F-3 FAZ. SERTÃOZINHO",
+      "local": "9009",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "62518",
+      "atividade": "COLHEDORA",
+      "frente": "F-4 PONTINHAS",
+      "local": "9367",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "62519",
+      "atividade": "COLHEDORA",
+      "frente": "F-1 FAZ. MONTE AZUL",
+      "local": "9602",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "62520",
+      "atividade": "COLHEDORA",
+      "frente": "F-5 SÃO JOÃO",
+      "local": "9481",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "62521",
+      "atividade": "COLHEDORA",
+      "frente": "F-3 FAZ. SERTÃOZINHO",
+      "local": "9009",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "62522",
+      "atividade": "COLHEDORA",
+      "frente": "F-2 FAZ. CASCALHO RICO",
+      "local": "9550",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "62523",
+      "atividade": "COLHEDORA",
+      "frente": "F-2 FAZ. CASCALHO RICO",
+      "local": "9550",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "62524",
+      "atividade": "COLHEDORA",
+      "frente": "F-1 FAZ. MONTE AZUL",
+      "local": "9602",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "62525",
+      "atividade": "COLHEDORA",
+      "frente": "F-3 FAZ. SERTÃOZINHO",
+      "local": "9009",
+      "responsavel": "LUIZ ALVES",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "62526",
+      "atividade": "COLHEDORA",
+      "frente": "F-5 SÃO JOÃO",
+      "local": "9481",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "62527",
+      "atividade": "COLHEDORA",
+      "frente": "F-5 SÃO JOÃO",
+      "local": "9481",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "62528",
+      "atividade": "COLHEDORA",
+      "frente": "F-4 PONTINHAS",
+      "local": "9367",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "62529",
+      "atividade": "COLHEDORA",
+      "frente": "F-4 PONTINHAS",
+      "local": "9367",
+      "responsavel": "JOÃO BATISTA",
+      "origem": "Colhedora (17).pdf"
+    },
+    {
+      "codigo": "62700",
+      "atividade": "UNIPORT",
+      "frente": "FAZ. TRÊS BARRAS",
+      "local": "9522",
+      "responsavel": "JOSÉ RONALDO",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "63700",
+      "atividade": "OLIVEIRA",
+      "frente": "PÁTIO INDUSTRIAL",
+      "local": "9616",
+      "responsavel": "RODRIGO",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "63735",
+      "atividade": "OLIVEIRA",
+      "frente": "PÁTIO INDUSTRIAL",
+      "local": "9337",
+      "responsavel": "RODRIGO",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "63815",
+      "atividade": "OLIVEIRA",
+      "frente": "PÁTIO INDUSTRIAL",
+      "local": "9998",
+      "responsavel": "RODRIGO",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "64000",
+      "atividade": "PÁ CARREGADEIRA",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "JOSE RONALDO",
+      "origem": "Linha Amr. (16).pdf"
+    },
+    {
+      "codigo": "64002",
+      "atividade": "PÁ CARREGADEIRA",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "JOSE RONALDO",
+      "origem": "Linha Amr. (16).pdf"
+    },
+    {
+      "codigo": "64003",
+      "atividade": "PÁ CARREGADEIRA",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "JOSE RONALDO",
+      "origem": "Linha Amr. (16).pdf"
+    },
+    {
+      "codigo": "64100",
+      "atividade": "LINHA AMARELA",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "JOSE RONALDO",
+      "origem": "Linha Amr. (16).pdf"
+    },
+    {
+      "codigo": "64201",
+      "atividade": "LINHA AMARELA",
+      "frente": "",
+      "local": "9843",
+      "responsavel": "JOSE RONALDO",
+      "origem": "Linha Amr. (16).pdf"
+    },
+    {
+      "codigo": "64202",
+      "atividade": "LINHA AMARELA",
+      "frente": "",
+      "local": "9998",
+      "responsavel": "JOSE RONALDO",
+      "origem": "Linha Amr. (16).pdf"
+    },
+    {
+      "codigo": "64350",
+      "atividade": "LINHA AMARELA",
+      "frente": "",
+      "local": "9522",
+      "responsavel": "JOSE RONALDO",
+      "origem": "Linha Amr. (16).pdf"
+    },
+    {
+      "codigo": "65717",
+      "atividade": "DRONE",
+      "frente": "PÁTIO INDUSTRIAL",
+      "local": "9998",
+      "responsavel": "",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "66147",
+      "atividade": "COMBATE A FORMIGA",
+      "frente": "SÃO PAULO",
+      "local": "029586",
+      "responsavel": "RODRIGO",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "66163",
+      "atividade": "COMBATE A FORMIGA",
+      "frente": "SÃO PAULO",
+      "local": "9614",
+      "responsavel": "RODRIGO",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "66172",
+      "atividade": "COMBATE A FORMIGA",
+      "frente": "SÃO PAULO",
+      "local": "9411",
+      "responsavel": "RODRIGO",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "67000",
+      "atividade": "DRONE",
+      "frente": "PÁTIO INDUSTRIAL",
+      "local": "9998",
+      "responsavel": "",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "67001",
+      "atividade": "DRONE",
+      "frente": "PÁTIO INDUSTRIAL",
+      "local": "9998",
+      "responsavel": "",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "67002",
+      "atividade": "DRONE",
+      "frente": "PÁTIO INDUSTRIAL",
+      "local": "9998",
+      "responsavel": "",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "67003",
+      "atividade": "DRONE",
+      "frente": "PÁTIO INDUSTRIAL",
+      "local": "9998",
+      "responsavel": "",
+      "origem": "Tratos Cult. (15).pdf"
+    },
+    {
+      "codigo": "94220",
+      "atividade": "COLHEITABILIDADE",
+      "frente": "FAZ. SUCURI E CAJAMANGA",
+      "local": "9403",
+      "responsavel": "JOSÉ RONALDO",
+      "origem": "Tratos Cult. (15).pdf"
+    }
+  ]
+}

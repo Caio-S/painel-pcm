@@ -43,6 +43,21 @@ Use a **mesma `DATABASE_URL`** que está em `catalogo/.env` (pooler em modo *tra
 4. Depois do primeiro deploy, abra o painel e clique em **Atualizar agora** — isso popula a
    base (O.S. abertas + frota na hora, histórico em segundo plano).
 
+## Alocação da frota
+
+Atividade / frente / local / responsável não vêm do MySQL da empresa — são lançados no painel
+(aba Alocação) ou carregados em lote a partir dos relatórios de disponibilidade de frota do PCM:
+
+```
+python seed_alocacao.py --dry-run   # mostra o que mudaria
+python seed_alocacao.py             # grava
+```
+
+`data/alocacao_frota.json` guarda o último recorte (196 frotas, relatórios de 05/08/2026) com a
+data e o PDF de origem de cada linha. O script faz upsert por código de frota, é idempotente e
+só mexe nas frotas que estão no arquivo. Para atualizar, troque o JSON e rode de novo — contra o
+Postgres é só exportar `DATABASE_URL` antes.
+
 ## Estrutura
 
 - `app.py` — rotas Flask (`/api/...`).
@@ -53,5 +68,6 @@ Use a **mesma `DATABASE_URL`** que está em `catalogo/.env` (pooler em modo *tra
 - `mariadb_client.py` — cliente somente leitura do MySQL da empresa.
 - `sync.py` — orquestra a sincronização (abertas/frota síncrono, histórico incremental em
   thread de background).
+- `seed_alocacao.py` + `data/alocacao_frota.json` — carga em lote da alocação de frota.
 - `static/js/` — frontend (JS puro, sem build step): `core.js` (dashboard/ficha),
   `admin.js` (alocação/contatos/classificação), `cobranca.js`, `tv.js`.
