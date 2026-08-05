@@ -409,6 +409,27 @@ def _aloc_dict(codigo):
     return a.to_dict() if a else {"c": codigo, "ativ": "", "fr": "", "resp": "", "loc": ""}
 
 
+@app.route("/api/frota/<codigo>/historico")
+def api_frota_historico(codigo):
+    f = db.session.get(Frota, codigo)
+    hist = OsHistorico.query.filter_by(veic=codigo).order_by(OsHistorico.data_abertura.desc()).all()
+    abertas = OsAberta.query.filter_by(veic=codigo).order_by(OsAberta.ab.desc()).all()
+    cfg = _config()
+    historico_dicts = [
+        {"veic": h.veic, "d": h.data_abertura, "t": h.horas_parada or 0, "s": h.sistema, "p": h.problema}
+        for h in hist
+    ]
+    rt = business.calcular_retrabalho(historico_dicts, cfg["reincDias"])
+    return jsonify({
+        "codigo": codigo,
+        "frota": f.to_dict() if f else None,
+        "aloc": _aloc_dict(codigo),
+        "retrabalho": rt.get(codigo),
+        "abertas": [o.to_dict() for o in abertas],
+        "historico": [h.to_dict() for h in hist[:200]],
+    })
+
+
 @app.route("/api/frota/<codigo>/alocacao", methods=["PUT"])
 def api_frota_alocacao(codigo):
     payload = request.get_json(force=True) or {}

@@ -93,6 +93,10 @@ function kpis() {
   const th = ab.reduce((s, o) => s + horas(agora() - new Date(o.ab)), 0);
   kHoras.textContent = Math.round(th).toLocaleString("pt-BR");
   kHorasSub.textContent = "média de " + Math.round(th / (ab.length || 1)) + "h por O.S.";
+  kpiAlert.classList.toggle("active", filtro.alerta);
+  kpiMat.classList.toggle("active", filtro.classe === "MATERIAL");
+  kpiSem.classList.toggle("active", filtro.semCls);
+  kpiReinc.classList.toggle("active", filtro.reinc);
 }
 
 /* ============ cards ============ */
@@ -118,19 +122,17 @@ function card(o) {
   const rc = o.aberta ? o.reinc : null;
   const semH = o.aberta && !rc && o.semHistorico;
   const rbox = rc ? `<div class="rbox"><b>REINCIDÊNCIA — ${rc.n}ª ocorrência em ${CONFIG.reincDias} dias.</b>
-      ${esc(o.sisC)} · ${esc(o.probC)} — voltou em ${rc.voltaEm} dia(s) após a última O.S., que somam ${rc.horas}h paradas.
-      <ul>${rc.ant.slice(0, 3).map(h => `<li>${fmt(h.d)} · O.S. ${h.os}${h.t ? " · " + h.t.toFixed(1) + "h" : ""} — ${esc((h.x || "").slice(0, 60))}</li>`).join("")}
-      ${rc.ant.length > 3 ? `<li>+ ${rc.ant.length - 3} ocorrência(s) anterior(es)</li>` : ""}</ul>
+      ${esc(o.sisC)} · ${esc(o.probC)} — voltou em ${rc.voltaEm} dia(s), ${rc.horas}h paradas nas ocorrências anteriores.
+      <button class="linklike" data-frota-hist="${o.veic}">Ver histórico da frota →</button>
       ${o.cobrado ? `<div class="cob">✓ Cobrança enviada em ${fmt(o.cobrado)}</div>` : ""}</div>`
     : (semH ? `<div class="pend" style="border-left:3px solid #A9B6C4;color:var(--ink2)">Sem histórico desta frota carregado — não dá para dizer se é reincidência.</div>` : "");
   return `<article class="os ${o.aberta && vencida(o) ? 'vencida' : ''}">
    <div class="os-top">
-    <div class="frota">${o.veic}<span>${esc(o.mod || o.esp)}</span></div>
+    <button class="frota clickable" data-frota-hist="${o.veic}">${o.veic}<span>${esc(o.mod || o.esp)}</span></button>
     <div class="os-meta">
-      <div class="tags">${rc ? `<span class="tag reinc flash">${rc.n}ª vez · ${rc.voltaEm}d</span>` : ""}<span class="tag tagfr">${esc(o.frente)}</span><span class="tag ${c.cls}">${c.lbl}</span><span class="tag">O.S. ${o.os}</span>
-        <span class="tag">${o.mt}</span><span class="tag">${esc(o.esp)}</span>
+      <div class="tags">${rc ? `<span class="tag reinc flash">${rc.n}ª vez · ${rc.voltaEm}d</span>` : ""}<span class="tag tagfr">${esc(o.frente)}</span><span class="tag ${c.cls}">${c.lbl}</span>
         ${o.aberta && vencida(o) ? '<span class="tag diag flash">retorno vencido</span>' : ''}</div>
-      <div class="veic">${esc(o.desc)} · ${esc(o.ofic)}</div>
+      <div class="veic">${esc(o.desc)} · ${esc(o.esp)} · O.S. ${o.os} · ${esc(o.ofic)}</div>
       <div class="motivo">${esc(o.prob) || "—"}</div>
     </div>
    </div>
@@ -141,7 +143,7 @@ function card(o) {
     </div>` : `<div class="os-clock"><div class="tempo">${dur(new Date(o.encerrada) - new Date(o.ab))}<small>parada total · encerrada ${fmt(o.encerrada)}</small></div></div>`}
    <div class="os-body">
      ${(function () { const r = o.retrabalho; if (!r || r.n < 3) return ""; const b = r.pc >= 70 ? "b1" : r.pc >= 40 ? "b2" : "b3";
-      return `<span class="rt ${b}">Retrabalho da frota: ${r.pc}% · ${r.re} de ${r.n} O.S. · ${r.h}h paradas</span>` })()}
+      return `<button class="rt ${b} clickable" data-frota-hist="${o.veic}">Retrabalho da frota: ${r.pc}% · ${r.re} de ${r.n} O.S. · ${r.h}h paradas</button>` })()}
      ${(o.resp || o.respFr) ? `<span class="resp">Responsável: ${esc(o.resp || o.respFr)}</span>` : `<span class="resp" style="color:var(--red);background:var(--red-bg)">Sem responsável</span>`}
      ${o.prevLib ? `<span class="resp" style="background:var(--green-bg);color:var(--green)">Previsão de liberação: ${fmt(o.prevLib)}</span>` : ""}
      ${rbox}${pend}
@@ -157,9 +159,6 @@ function card(o) {
 
 function render() {
   kpis();
-  chAlerta.classList.toggle("on", filtro.alerta);
-  chSem.classList.toggle("on", filtro.semCls);
-  chReinc.classList.toggle("on", filtro.reinc);
   chSemH.classList.toggle("on", filtro.semH);
   btnEncerradas.textContent = filtro.encerradas ? "Ver abertas" : "Ver encerradas";
   const l = filtrar();
@@ -174,6 +173,7 @@ function render() {
       <div class="grid">${arr.map(card).join("")}</div>`;
   }).join("") : `<div class="empty">Nenhuma O.S. neste filtro.</div>`;
   grupos.querySelectorAll("[data-act]").forEach(b => b.onclick = () => b.dataset.act === "ret" ? retornoRapido(b.dataset.os) : b.dataset.act === "cob" ? cobrar(b.dataset.os) : abrir(b.dataset.os));
+  grupos.querySelectorAll("[data-frota-hist]").forEach(b => b.onclick = e => { e.stopPropagation(); abrirHistoricoFrota(b.dataset.frotaHist) });
 }
 
 function opcoes() {
@@ -197,6 +197,8 @@ function achar(os) { return OS_LIST.find(o => o.os === os) }
 function abrir(os) {
   abertaId = os; const o = achar(os);
   mFrota.innerHTML = o.veic + `<span>${esc(o.mod || "—")} · ${esc(o.esp)} · O.S. ${o.os}</span>`;
+  mFrota.classList.add("clickable");
+  mFrota.onclick = () => abrirHistoricoFrota(o.veic);
   const hist = o.retornos.slice().sort((a, b) => new Date(b.em) - new Date(a.em));
   mBody.innerHTML = `
   <div class="fs"><h4>Ficha do sistema</h4>
@@ -339,6 +341,37 @@ async function nova() {
   } catch (e) { aviso(e.message) }
 }
 
+/* ============ histórico da frota ============ */
+async function abrirHistoricoFrota(veic) {
+  let dados;
+  try { dados = await api(`/frota/${encodeURIComponent(veic)}/historico`); }
+  catch (e) { aviso(e.message); return; }
+  const f = dados.frota || {}, aloc = dados.aloc || {}, rt = dados.retrabalho;
+  const abertas = dados.abertas || [], hist = dados.historico || [];
+  const frenteTxt = (aloc.ativ || aloc.fr) ? `${esc(aloc.ativ)} ${esc(aloc.fr)}`.trim() : "sem frente definida";
+  fhFrota.innerHTML = veic + `<span id="fhSub">${esc(f.m || "—")} · ${esc(f.e || "")} · ${frenteTxt} · ${hist.length} O.S. no histórico</span>`;
+  fhBody.innerHTML = `
+    <div class="fs">
+      <div class="kpis" style="grid-template-columns:repeat(3,1fr);margin:0">
+        <div class="kpi"><small>O.S. no histórico</small><b>${hist.length}</b><i>carregado pelo sync</i></div>
+        <div class="kpi ${rt && rt.pc >= 50 ? 'alert' : ''}"><small>Retrabalho</small><b>${rt ? rt.pc + '%' : '—'}</b><i>${rt ? rt.re + ' de ' + rt.n + ' são repetição' : 'sem dados suficientes'}</i></div>
+        <div class="kpi time"><small>Horas paradas</small><b>${rt ? Math.round(rt.h).toLocaleString('pt-BR') : 0}</b><i>${rt && rt.de ? 'desde ' + fmtd(rt.de) : '—'}</i></div>
+      </div>
+    </div>
+    ${abertas.length ? `<div class="fs"><h4>O.S. aberta agora</h4>
+      <ul class="tl">${abertas.map(o => `<li><time>${fmt(o.ab)}</time><p>${esc(o.prob) || "—"}</p></li>`).join("")}</ul></div>` : ""}
+    <div class="fs" style="padding:0;overflow:auto;max-height:44vh">
+      <table class="ct"><tr><th style="width:15%">Data</th><th style="width:24%">Sistema / Problema</th><th style="width:9%">Horas</th><th>Relato</th></tr>
+      ${hist.map(h => `<tr><td class="n">${fmt(h.d)}</td><td>${esc(h.s) || "—"}<br><span style="font-size:10.5px;color:var(--ink2)">${esc(h.p) || ""}</span></td>
+        <td class="n">${h.t ? h.t.toFixed(1) + "h" : "—"}</td><td style="font-size:11.5px">${esc((h.x || "").slice(0, 140))}</td></tr>`).join("")}
+      </table>
+      ${hist.length ? "" : `<p style="padding:20px;text-align:center;color:var(--ink2)">Nenhum histórico carregado para esta frota ainda.</p>`}
+    </div>`;
+  maskFrota.classList.add("on");
+}
+fhX.onclick = fhFechar.onclick = () => maskFrota.classList.remove("on");
+maskFrota.onclick = e => { if (e.target === maskFrota) maskFrota.classList.remove("on") };
+
 /* ============ carregamento ============ */
 async function carregarOS() {
   OS_LIST = await api('/os');
@@ -377,10 +410,13 @@ function relogio() {
 btnNova.onclick = nova;
 btnAtualizar.onclick = atualizarAgora;
 btnEncerradas.onclick = () => { filtro.encerradas = !filtro.encerradas; render() };
-chAlerta.onclick = () => { filtro.alerta = !filtro.alerta; render() };
-chSem.onclick = () => { filtro.semCls = !filtro.semCls; render() };
-chReinc.onclick = () => { filtro.reinc = !filtro.reinc; render() };
 chSemH.onclick = () => { filtro.semH = !filtro.semH; render() };
+document.querySelectorAll(".kpi[data-filtro]").forEach(el => el.onclick = () => {
+  const k = el.dataset.filtro;
+  if (k === "mat") { filtro.classe = filtro.classe === "MATERIAL" ? "" : "MATERIAL"; fClasse.value = filtro.classe; }
+  else filtro[k] = !filtro[k];
+  render();
+});
 fAgrup.onchange = e => { filtro.agr = e.target.value; render() };
 fFrente.onchange = e => { filtro.frente = e.target.value; render() };
 fEsp.onchange = e => { filtro.esp = e.target.value; render() };

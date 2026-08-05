@@ -38,18 +38,15 @@
 
 <main>
   <section class="kpis">
-    <div class="kpi alert"><small>Retorno vencido</small><b id="kAlert">0</b><i id="kAlertSub">—</i></div>
+    <button class="kpi alert clickable" id="kpiAlert" data-filtro="alerta" title="Clique para filtrar"><small>Retorno vencido</small><b id="kAlert">0</b><i id="kAlertSub">—</i></button>
     <div class="kpi"><small>O.S. abertas</small><b id="kAbertas">0</b><i id="kAbertasSub">—</i></div>
-    <div class="kpi mat"><small>Aguardando material</small><b id="kMat">0</b><i id="kMatSub">—</i></div>
-    <div class="kpi"><small>Sem classificação</small><b id="kSem">0</b><i>ninguém definiu a pendência</i></div>
-    <div class="kpi reinc"><small>Reincidências</small><b id="kReinc">0</b><i id="kReincSub">—</i></div>
+    <button class="kpi mat clickable" id="kpiMat" data-filtro="mat" title="Clique para filtrar"><small>Aguardando material</small><b id="kMat">0</b><i id="kMatSub">—</i></button>
+    <button class="kpi clickable" id="kpiSem" data-filtro="semCls" title="Clique para filtrar"><small>Sem classificação</small><b id="kSem">0</b><i>ninguém definiu a pendência</i></button>
+    <button class="kpi reinc clickable" id="kpiReinc" data-filtro="reinc" title="Clique para filtrar"><small>Reincidências</small><b id="kReinc">0</b><i id="kReincSub">—</i></button>
     <div class="kpi time"><small>Horas paradas acumuladas</small><b id="kHoras">0</b><i id="kHorasSub">—</i></div>
   </section>
 
   <section class="bar">
-    <button class="chip alert" id="chAlerta">Só vencidas</button>
-    <button class="chip" id="chSem">Sem classificação</button>
-    <button class="chip alert" id="chReinc">Só reincidências</button>
     <button class="chip" id="chSemH">Sem histórico da frota</button>
     <div class="sep"></div>
     <select id="fAgrup"><option value="">Todo agrupamento</option></select>
@@ -157,6 +154,14 @@
       <div class="grow"></div>
       <button class="btn btn-gold" id="cFeito">Marcar como cobrada</button>
     </div>
+  </div>
+</div>
+
+<div class="mask" id="maskFrota">
+  <div class="modal" style="max-width:760px">
+    <div class="mhead"><div class="frota" id="fhFrota">—<span id="fhSub"></span></div><button class="x" id="fhX">&times;</button></div>
+    <div class="mbody" id="fhBody"></div>
+    <div class="mfoot"><div class="grow"></div><button class="btn btn-dark" id="fhFechar">Fechar</button></div>
   </div>
 </div>
 
