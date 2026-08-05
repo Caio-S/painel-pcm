@@ -40,6 +40,11 @@ function li(s) {
   return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + "T" + p(d.getHours()) + ":" + p(d.getMinutes());
 }
 function ld(s) { return s ? String(s).slice(0, 10) : ""; }
+function carimbaAgora(idNumero, idData) {
+  const num = document.getElementById(idNumero), data = document.getElementById(idData);
+  if (!num || !data) return;
+  num.addEventListener("input", () => { if (num.value.trim() && !data.value) data.value = li(new Date()) });
+}
 function ultRet(o) { return (o.retornos && o.retornos.length) ? new Date(o.retornos.map(r => r.em).sort().slice(-1)[0]) : new Date(o.ab); }
 function semRet(o) { return agora() - ultRet(o); }
 function vencida(o) { return o.aberta && horas(semRet(o)) >= CONFIG.sla; }
@@ -104,8 +109,8 @@ function blocoMat(o) {
   const it = o.item, s = it.solData, p = it.pedData;
   const gap = s ? "solicitado " + dur(new Date(s) - new Date(o.ab)) + " após a parada" : "PEÇA AINDA NÃO SOLICITADA";
   return `<div class="pend"><b>Material:</b> ${esc(it.peca) || "peça não informada"}
-    <div class="kv"><span>${it.sol ? "Solic. " + esc(it.sol) : "sem solicitação"}</span><span>${s ? fmtd(s) : "—"}</span>
-    <span>${it.ped ? "Pedido " + esc(it.ped) : "sem pedido"}</span><span>${p ? fmtd(p) : "—"}</span>
+    <div class="kv"><span>${it.sol ? "Solic. " + esc(it.sol) : "sem solicitação"}</span><span>${s ? fmt(s) : "—"}</span>
+    <span>${it.ped ? "Pedido " + esc(it.ped) : "sem pedido"}</span><span>${p ? fmt(p) : "—"}</span>
     <span>${it.previsao ? "chega " + fmtd(it.previsao) : "sem previsão"}</span>${it.fornec ? `<span>${esc(it.fornec)}</span>` : ""}</div>
     <div class="kv"><span class="${s ? '' : 'warn'}">${gap}</span></div>
     <div class="acao">▸ ${it.acao ? "Falta: " + esc(it.acao) + (it.acaoResp ? " — " + esc(it.acaoResp) : "") : "Ação pendente não definida"}</div></div>`;
@@ -262,10 +267,10 @@ function abrir(os) {
     <div class="f"><label>Peça / componente</label><input id="fPeca" value="${esc(o.item.peca)}" placeholder="Compressor de ar"></div>
     <div class="row">
       <div class="f"><label>Nº da solicitação / requisição</label><input id="fSol" value="${esc(o.item.sol)}"></div>
-      <div class="f"><label>Data da solicitação</label><input type="date" id="fSolD" value="${ld(o.item.solData)}"></div></div>
+      <div class="f"><label>Data e hora da solicitação</label><input type="datetime-local" id="fSolD" value="${li(o.item.solData)}"></div></div>
     <div class="row">
       <div class="f"><label>Nº do pedido de compra</label><input id="fPed" value="${esc(o.item.ped)}"></div>
-      <div class="f"><label>Data do pedido</label><input type="date" id="fPedD" value="${ld(o.item.pedData)}"></div></div>
+      <div class="f"><label>Data e hora do pedido</label><input type="datetime-local" id="fPedD" value="${li(o.item.pedData)}"></div></div>
     <div class="f"><label>Ação que falta para a peça chegar</label>
       <select id="fAcao"><option value="">Selecione a ação pendente</option>
         ${CONSTS.acoes.map(a => `<option ${o.item.acao === a ? "selected" : ""}>${a}</option>`).join("")}
@@ -295,6 +300,11 @@ function abrir(os) {
   });
   const selAcao = document.getElementById("fAcao");
   if (selAcao) selAcao.onchange = () => { boxOutra.style.display = selAcao.value === "__outra" ? "block" : "none" };
+  // lançou o número da solicitação/pedido, carimba a hora — é o instante em que
+  // aconteceu, e ninguém ia digitar isso à mão. Só quando o campo está vazio,
+  // pra não sobrescrever data que o PCM ajustou.
+  carimbaAgora("fSol", "fSolD");
+  carimbaAgora("fPed", "fPedD");
   const add = document.getElementById("btnAddRet");
   if (add) add.onclick = async () => {
     const t = document.getElementById("fNovo").value.trim();

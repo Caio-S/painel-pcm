@@ -129,9 +129,11 @@ class OsDetalhe(db.Model):
 
     item_peca = db.Column(db.String(255), default="")
     item_sol = db.Column(db.String(60), default="")
-    item_sol_data = db.Column(db.Date)
+    # data e hora: o card mede quanto tempo a peça demorou a ser solicitada depois
+    # da parada, e só com a data essa conta errava por até um dia inteiro.
+    item_sol_data = db.Column(db.DateTime)
     item_ped = db.Column(db.String(60), default="")
-    item_ped_data = db.Column(db.Date)
+    item_ped_data = db.Column(db.DateTime)
     item_acao = db.Column(db.String(255), default="")
     item_acao_resp = db.Column(db.String(120), default="")
     item_previsao = db.Column(db.Date)
@@ -159,8 +161,8 @@ class OsDetalhe(db.Model):
             "cobrado": _iso(self.cobrado),
             "item": {
                 "peca": self.item_peca or "", "sol": self.item_sol or "",
-                "solData": _d(self.item_sol_data), "ped": self.item_ped or "",
-                "pedData": _d(self.item_ped_data), "acao": self.item_acao or "",
+                "solData": _iso(self.item_sol_data), "ped": self.item_ped or "",
+                "pedData": _iso(self.item_ped_data), "acao": self.item_acao or "",
                 "acaoResp": self.item_acao_resp or "", "previsao": _d(self.item_previsao),
                 "fornec": self.item_fornec or "",
             },

@@ -51,14 +51,26 @@ db.init_app(app)
 
 
 def _migrar():
-    """db.create_all() cria tabela nova mas não coluna nova em tabela que já existe —
-    o histórico em produção tem dezenas de milhares de linhas e não dá pra recriar."""
+    """db.create_all() cria tabela nova mas não mexe em tabela que já existe — o
+    histórico em produção tem dezenas de milhares de linhas e não dá pra recriar."""
     insp = inspect(db.engine)
-    if not insp.has_table("pcm_os_historico"):
-        return
-    colunas = {c["name"] for c in insp.get_columns("pcm_os_historico")}
-    if "itens" not in colunas:
-        db.session.execute(text("ALTER TABLE pcm_os_historico ADD COLUMN itens TEXT"))
+
+    if insp.has_table("pcm_os_historico"):
+        colunas = {c["name"] for c in insp.get_columns("pcm_os_historico")}
+        if "itens" not in colunas:
+            db.session.execute(text("ALTER TABLE pcm_os_historico ADD COLUMN itens TEXT"))
+            db.session.commit()
+
+    # solicitação e pedido passaram a guardar hora além da data. Só o Postgres
+    # precisa da conversão: o SQLite não tem tipo fixo por coluna.
+    if insp.has_table("pcm_os_detalhe") and db.engine.dialect.name == "postgresql":
+        tipos = {c["name"]: str(c["type"]).upper() for c in insp.get_columns("pcm_os_detalhe")}
+        for coluna in ("item_sol_data", "item_ped_data"):
+            if tipos.get(coluna) == "DATE":
+                db.session.execute(text(
+                    f"ALTER TABLE pcm_os_detalhe ALTER COLUMN {coluna} "
+                    f"TYPE TIMESTAMP USING {coluna}::timestamp"
+                ))
         db.session.commit()
 
 
@@ -337,9 +349,9 @@ def api_os_patch(os_num):
     item = payload.get("item") or {}
     if "peca" in item: d.item_peca = item["peca"] or ""
     if "sol" in item: d.item_sol = item["sol"] or ""
-    if "solData" in item: d.item_sol_data = _parse_date(item["solData"])
+    if "solData" in item: d.item_sol_data = _parse_datahora(item["solData"])
     if "ped" in item: d.item_ped = item["ped"] or ""
-    if "pedData" in item: d.item_ped_data = _parse_date(item["pedData"])
+    if "pedData" in item: d.item_ped_data = _parse_datahora(item["pedData"])
     if "acao" in item: d.item_acao = item["acao"] or ""
     if "acaoResp" in item: d.item_acao_resp = item["acaoResp"] or ""
     if "previsao" in item: d.item_previsao = _parse_date(item["previsao"])
@@ -360,6 +372,14 @@ def _parse_date(s):
     if not s:
         return None
     return datetime.fromisoformat(s[:10]).date()
+
+
+def _parse_datahora(s):
+    """Aceita tanto o datetime-local do formulário quanto a data pura que ficou
+    gravada antes de solicitação e pedido passarem a ter hora."""
+    if not s:
+        return None
+    return datetime.fromisoformat(s.replace("Z", "")[:19]) if len(s) > 10 else datetime.fromisoformat(s[:10])
 
 
 @app.route("/api/os/<os_num>/retorno", methods=["POST"])

@@ -43,8 +43,8 @@ function imprimir() {
       <td>${esc(o.resp) || "—"}</td><td>${CONSTS.classes[o.classe].lbl}</td>
       <td class="num">${o.reinc ? o.reinc.n + "ª · " + o.reinc.voltaEm + "d" : "—"}</td>
       <td>${esc((o.prob || "").slice(0, 150))}${o.detalhe ? "<br><i>" + esc(o.detalhe) + "</i>" : ""}</td>
-      <td class="num">${esc(o.item.sol) || "—"}${o.item.solData ? "<br>" + fmtd(o.item.solData) : ""}</td>
-      <td class="num">${esc(o.item.ped) || "—"}${o.item.pedData ? "<br>" + fmtd(o.item.pedData) : ""}</td>
+      <td class="num">${esc(o.item.sol) || "—"}${o.item.solData ? "<br>" + fmt(o.item.solData) : ""}</td>
+      <td class="num">${esc(o.item.ped) || "—"}${o.item.pedData ? "<br>" + fmt(o.item.pedData) : ""}</td>
       <td>${esc(o.item.acao) || "—"}${o.item.previsao ? "<br>prev. " + fmtd(o.item.previsao) : ""}</td>
       <td>${ur ? fmt(ur.em) + " — " + esc(ur.txt.slice(0, 110)) : "sem retorno registrado"}</td></tr>`;
   };
