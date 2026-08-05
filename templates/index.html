@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PCM · O.S. Abertas — CRV Industrial</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body data-mode="gestao">
+
+<header class="top">
+  <div class="hwrap">
+    <div class="logo" id="logoBox">
+      <img id="logoImg" src="{{ url_for('static', filename='img/logo_default.png') }}" alt="CRV Industrial">
+    </div>
+    <div class="brand"><b>CRV Industrial · Capinópolis</b><span>PCM — Planejamento e Controle de Manutenção</span></div>
+    <div class="hspacer"></div>
+    <span id="stChip" style="display:none"></span>
+    <div class="clock"><b id="clk">--:--:--</b><span id="clkd">—</span></div>
+    <button class="tbtn gold big" id="btnTV">
+      <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Painel da TV</button>
+    <button class="tbtn gold big" id="btnAtualizar">
+      <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 11-3-6.7M21 3v6h-6"/></svg>Atualizar agora</button>
+  </div>
+  <div class="tools">
+    <div class="tgrp"><span class="lbl">Relatórios</span>
+      <button class="tbtn" id="btnResumo"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="10" height="14" rx="2"/><path d="M15 21H5V7"/></svg>Copiar resumo</button>
+    </div>
+    <div class="tsep"></div>
+    <div class="tgrp"><span class="lbl">Cadastros</span>
+      <button class="tbtn" id="btnAloc"><svg viewBox="0 0 24 24"><path d="M3 17h4l2-9 3 13 3-9 2 5h4"/></svg>Alocação de frota</button>
+      <button class="tbtn" id="btnCls"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h7"/><circle cx="18.5" cy="16.5" r="3.5"/></svg>Classificação</button>
+      <button class="tbtn" id="btnCont"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/></svg>Contatos</button>
+      <button class="tbtn" id="btnNova"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Nova O.S.</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="kpis">
+    <div class="kpi alert"><small>Retorno vencido</small><b id="kAlert">0</b><i id="kAlertSub">—</i></div>
+    <div class="kpi"><small>O.S. abertas</small><b id="kAbertas">0</b><i id="kAbertasSub">—</i></div>
+    <div class="kpi mat"><small>Aguardando material</small><b id="kMat">0</b><i id="kMatSub">—</i></div>
+    <div class="kpi"><small>Sem classificação</small><b id="kSem">0</b><i>ninguém definiu a pendência</i></div>
+    <div class="kpi reinc"><small>Reincidências</small><b id="kReinc">0</b><i id="kReincSub">—</i></div>
+    <div class="kpi time"><small>Horas paradas acumuladas</small><b id="kHoras">0</b><i id="kHorasSub">—</i></div>
+  </section>
+
+  <section class="bar">
+    <button class="chip alert" id="chAlerta">Só vencidas</button>
+    <button class="chip" id="chSem">Sem classificação</button>
+    <button class="chip alert" id="chReinc">Só reincidências</button>
+    <button class="chip" id="chSemH">Sem histórico da frota</button>
+    <div class="sep"></div>
+    <select id="fAgrup"><option value="">Todo agrupamento</option></select>
+    <select id="fFrente"><option value="">Toda frente / atividade</option></select>
+    <select id="fEsp"><option value="">Toda especialidade</option></select>
+    <select id="fModelo"><option value="">Todo modelo</option></select>
+    <select id="fTipo"><option value="">Interna, campo e externa</option></select>
+    <select id="fClasse">
+      <option value="">Toda pendência</option>
+      <option value="MATERIAL">Falta de material</option>
+      <option value="MAO_OBRA">Falta de mão de obra</option>
+      <option value="DIAGNOSTICO">Diagnóstico</option>
+      <option value="EXECUCAO">Em execução</option>
+      <option value="EXTERNO">Serviço externo</option>
+      <option value="NAO">Sem classificação</option>
+    </select>
+    <input type="search" id="fBusca" placeholder="Frota, O.S., peça, responsável">
+    <div class="hspacer"></div>
+    <span class="count" id="cont">—</span>
+    <div class="sep"></div>
+    <div class="sla-set">Agrupar por
+      <select id="fGroupBy" style="max-width:170px">
+        <option value="frente">Frente / atividade</option>
+        <option value="tp">Tipo da O.S. (interna/campo/externa)</option>
+        <option value="esp">Especialidade</option>
+        <option value="mod">Modelo</option>
+        <option value="agr">Agrupamento</option>
+        <option value="ofic">Oficina</option>
+        <option value="classe">Pendência</option>
+        <option value="resp">Responsável</option>
+        <option value="">Sem agrupamento</option>
+      </select>
+    </div>
+    <div class="sla-set">Prazo <input type="number" id="sla" min="0.5" step="0.5" value="3"> h</div>
+    <button class="btn btn-line" id="btnEncerradas">Ver encerradas</button>
+  </section>
+
+  <div id="grupos"></div>
+</main>
+
+<div id="tv">
+  <div class="tvhead">
+    <div id="tvLogo" style="display:none"></div><div class="tvbrand"><b>CRV Industrial</b><span>PCM · Unidade Capinópolis</span></div>
+    <div class="tvtitle"><b id="tvT">Equipamentos parados</b><span id="tvS">—</span></div>
+    <div class="tvclock"><b id="tvClk">--:--</b><span id="tvClkD">—</span></div>
+  </div>
+  <div class="tvkpis" id="tvKpis"></div>
+  <div class="tvbody" id="tvBody"></div>
+  <div class="tvfoot">
+    <span id="tvFoot">—</span>
+    <div class="dots" id="tvDots"></div>
+  </div>
+  <button class="tvexit" id="tvExit">Sair do painel (Esc) · espaço pausa · setas navegam</button>
+</div>
+
+<div class="mask" id="mask">
+  <div class="modal">
+    <div class="mhead"><div class="frota" id="mFrota">—<span id="mSub"></span></div><button class="x" id="mX">&times;</button></div>
+    <div class="mbody" id="mBody"></div>
+    <div class="mfoot">
+      <button class="btn btn-dark" id="mSalvar">Salvar</button>
+      <button class="btn btn-line" id="mEncerrar">Encerrar O.S.</button>
+      <div class="grow"></div>
+      <button class="btn btn-line" id="mExcluir">Limpar dados do PCM</button>
+    </div>
+  </div>
+</div>
+
+<div class="mask" id="maskAloc">
+  <div class="modal" style="max-width:1080px">
+    <div class="mhead"><div class="frota" style="font-size:17px;letter-spacing:.1em">ALOCAÇÃO DE FROTA<span>Atividade e frente de cada equipamento</span></div><button class="x" id="aX">&times;</button></div>
+    <div class="mbody" id="aBody"></div>
+    <div class="mfoot"><span style="font-size:12px;color:var(--ink2)" id="aInfo">—</span><div class="grow"></div><button class="btn btn-dark" id="aFechar">Fechar</button></div>
+  </div>
+</div>
+
+<div class="mask" id="maskCont">
+  <div class="modal" style="max-width:820px">
+    <div class="mhead"><div class="frota" style="font-size:17px;letter-spacing:.08em">CONTATOS DOS RESPONSÁVEIS<span>telefone usado para enviar a cobrança de reincidência no WhatsApp</span></div><button class="x" id="ctX">&times;</button></div>
+    <div class="mbody" id="ctBody"></div>
+    <div class="mfoot"><span style="font-size:12px;color:var(--ink2)" id="ctInfo">—</span><div class="grow"></div><button class="btn btn-dark" id="ctFechar">Fechar</button></div>
+  </div>
+</div>
+
+<div class="mask" id="maskCls">
+  <div class="modal" style="max-width:1020px">
+    <div class="mhead"><div class="frota" style="font-size:17px;letter-spacing:.08em">CLASSIFICAÇÃO DAS O.S.<span>o painel classifica sozinho — aqui você revisa o que sobrou</span></div><button class="x" id="clX">&times;</button></div>
+    <div class="mbody" id="clBody"></div>
+    <div class="mfoot"><span style="font-size:12px;color:var(--ink2)" id="clInfo">—</span><div class="grow"></div><button class="btn btn-dark" id="clFechar">Fechar</button></div>
+  </div>
+</div>
+
+<div class="mask" id="maskCob">
+  <div class="modal" style="max-width:720px">
+    <div class="mhead"><div class="frota" style="font-size:17px;letter-spacing:.08em">COBRANÇA DE REINCIDÊNCIA<span id="cobSub">—</span></div><button class="x" id="cX">&times;</button></div>
+    <div class="mbody">
+      <div class="fs"><h4>Enviar para</h4><div id="cobDest"></div>
+        <p class="hint" style="margin:6px 0 0">Quem está marcado entra na linha de cópia da mensagem. Cadastre telefones e marque quem recebe sempre em <b>Contatos</b>.</p></div>
+      <div class="fs"><h4>Mensagem padrão — edite se precisar antes de enviar</h4>
+      <textarea id="txtCob"></textarea></div></div>
+    <div class="mfoot">
+      <button class="btn btn-dark" id="cCopiar">Copiar mensagem</button>
+      <button class="btn btn-line" id="cZap">Enviar no WhatsApp</button>
+      <button class="btn btn-line" id="cMail">Enviar por e-mail</button>
+      <div class="grow"></div>
+      <button class="btn btn-gold" id="cFeito">Marcar como cobrada</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<datalist id="dlResp"></datalist>
+<datalist id="dlAtiv"></datalist>
+<datalist id="dlFr"></datalist>
+<datalist id="dlLoc"></datalist>
+
+<script src="{{ url_for('static', filename='js/core.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+<script src="{{ url_for('static', filename='js/cobranca.js') }}"></script>
+<script src="{{ url_for('static', filename='js/tv.js') }}"></script>
+</body>
+</html>

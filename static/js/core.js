@@ -1,0 +1,416 @@
+/* ============ api ============ */
+const $ = id => document.getElementById(id);
+async function api(path, opts) {
+  const res = await fetch('/api' + path, { headers: { 'Content-Type': 'application/json' }, ...opts });
+  if (!res.ok) {
+    let msg = 'Erro ' + res.status;
+    try { const j = await res.json(); if (j.error) msg = j.error; } catch (_) {}
+    throw new Error(msg);
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+/* ============ estado ============ */
+let CONSTS = { sisLista: [], probLista: {}, classes: {}, acoes: [], grupoLbl: {}, familias: {} };
+let CONFIG = { sla: 3, reincDias: 30, groupBy: 'frente', tvSeg: 22 };
+let OS_LIST = [];
+let filtro = { alerta: false, semCls: false, reinc: false, semH: false, agr: "", esp: "", mod: "", frente: "", tp: "", classe: "", busca: "", encerradas: false };
+let abertaId = null;
+
+/* ============ util ============ */
+const esc = s => String(s == null ? "" : s).replace(/[<>&]/g, c => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
+const agora = () => new Date();
+const horas = ms => ms / 3600000;
+function dur(ms) {
+  if (ms < 0) ms = 0;
+  const h = Math.floor(ms / 3600000), m = Math.floor(ms % 3600000 / 60000);
+  return h >= 48 ? Math.floor(h / 24) + "d " + (h % 24) + "h" : h + "h" + String(m).padStart(2, "0");
+}
+function fmt(s) {
+  if (!s) return "—";
+  const d = new Date(s);
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" }) + " " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+function fmtd(s) { return s ? new Date(s).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—"; }
+function li(s) {
+  if (!s) return "";
+  const d = new Date(s); if (isNaN(d)) return "";
+  const p = n => String(n).padStart(2, "0");
+  return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + "T" + p(d.getHours()) + ":" + p(d.getMinutes());
+}
+function ld(s) { return s ? String(s).slice(0, 10) : ""; }
+function ultRet(o) { return (o.retornos && o.retornos.length) ? new Date(o.retornos.map(r => r.em).sort().slice(-1)[0]) : new Date(o.ab); }
+function semRet(o) { return agora() - ultRet(o); }
+function vencida(o) { return o.aberta && horas(semRet(o)) >= CONFIG.sla; }
+let tId; function aviso(m) { toast.textContent = m; toast.classList.add("on"); clearTimeout(tId); tId = setTimeout(() => toast.classList.remove("on"), 2600); }
+const v = id => { const e = document.getElementById(id); return e ? e.value.trim() : "" };
+
+/* ============ filtro / agrupamento ============ */
+function filtrar() {
+  const q = filtro.busca.toLowerCase();
+  return OS_LIST.filter(o => {
+    if (filtro.encerradas ? o.aberta : !o.aberta) return false;
+    if (filtro.alerta && !vencida(o)) return false;
+    if (filtro.semCls && o.classe !== "NAO") return false;
+    if (filtro.reinc && !o.reinc) return false;
+    if (filtro.semH && !o.semHistorico) return false;
+    if (filtro.agr && o.agr !== filtro.agr) return false;
+    if (filtro.esp && o.esp !== filtro.esp) return false;
+    if (filtro.mod && o.mod !== filtro.mod) return false;
+    if (filtro.frente && o.frente !== filtro.frente) return false;
+    if (filtro.tp && o.tp !== filtro.tp) return false;
+    if (filtro.classe && o.classe !== filtro.classe) return false;
+    if (q && !((o.veic + " " + o.os + " " + o.desc + " " + o.mod + " " + o.esp + " " + o.prob + " " + (o.detalhe || "") + " " + (o.resp || "") + " " + o.frente + " " + (o.item.peca || "") + " " + (o.item.sol || "") + " " + (o.item.ped || "")).toLowerCase().includes(q))) return false;
+    return true;
+  }).sort((a, b) => {
+    if (!a.aberta) return new Date(b.encerrada) - new Date(a.encerrada);
+    const va = vencida(a), vb = vencida(b);
+    if (va !== vb) return va ? -1 : 1;
+    return semRet(b) - semRet(a);
+  });
+}
+function agrupar(l, by) {
+  if (!by) return { "TODAS AS O.S.": l };
+  const g = {};
+  l.forEach(o => { const k = by === "classe" ? CONSTS.classes[o.classe].lbl : (o[by] || "NÃO INFORMADO"); (g[k] = g[k] || []).push(o) });
+  return g;
+}
+function kpis() {
+  const ab = OS_LIST.filter(o => o.aberta), al = ab.filter(vencida);
+  const mat = ab.filter(o => o.classe === "MATERIAL"), sem = ab.filter(o => o.classe === "NAO");
+  kAlert.textContent = al.length; kAlertSub.textContent = "de " + ab.length + " O.S. sem retorno há +" + CONFIG.sla + "h";
+  kAbertas.textContent = ab.length; kAbertasSub.textContent = [...new Set(ab.map(o => o.esp))].length + " especialidades";
+  kMat.textContent = mat.length;
+  const semPed = mat.filter(o => !o.item.ped).length;
+  kMatSub.textContent = semPed ? semPed + " sem pedido registrado" : "todas com pedido";
+  kSem.textContent = sem.length;
+  const rr = ab.filter(o => o.reinc);
+  kReinc.textContent = rr.length;
+  const naoCob = rr.filter(o => !o.cobrado).length;
+  const semH = ab.filter(o => o.semHistorico).length;
+  kReincSub.textContent = (naoCob ? naoCob + " sem cobrança" : "todas cobradas") + (semH ? " · " + semH + " O.S. sem histórico da frota" : "");
+  const th = ab.reduce((s, o) => s + horas(agora() - new Date(o.ab)), 0);
+  kHoras.textContent = Math.round(th).toLocaleString("pt-BR");
+  kHorasSub.textContent = "média de " + Math.round(th / (ab.length || 1)) + "h por O.S.";
+}
+
+/* ============ cards ============ */
+function blocoMat(o) {
+  const it = o.item, s = it.solData, p = it.pedData;
+  const gap = s ? "solicitado " + dur(new Date(s) - new Date(o.ab)) + " após a parada" : "PEÇA AINDA NÃO SOLICITADA";
+  return `<div class="pend"><b>Material:</b> ${esc(it.peca) || "peça não informada"}
+    <div class="kv"><span>${it.sol ? "Solic. " + esc(it.sol) : "sem solicitação"}</span><span>${s ? fmtd(s) : "—"}</span>
+    <span>${it.ped ? "Pedido " + esc(it.ped) : "sem pedido"}</span><span>${p ? fmtd(p) : "—"}</span>
+    <span>${it.previsao ? "chega " + fmtd(it.previsao) : "sem previsão"}</span>${it.fornec ? `<span>${esc(it.fornec)}</span>` : ""}</div>
+    <div class="kv"><span class="${s ? '' : 'warn'}">${gap}</span></div>
+    <div class="acao">▸ ${it.acao ? "Falta: " + esc(it.acao) + (it.acaoResp ? " — " + esc(it.acaoResp) : "") : "Ação pendente não definida"}</div></div>`;
+}
+function card(o) {
+  const sr = semRet(o), pct = Math.min(100, horas(sr) / CONFIG.sla * 100);
+  const nv = pct >= 100 ? "late" : pct >= 70 ? "warn" : "ok";
+  const c = CONSTS.classes[o.classe] || CONSTS.classes.NAO;
+  const ur = o.retornos.length ? o.retornos.slice().sort((a, b) => new Date(b.em) - new Date(a.em))[0] : null;
+  let pend = "";
+  if (o.classe === "MATERIAL") pend = blocoMat(o);
+  else if (o.classe === "MAO_OBRA") pend = `<div class="pend"><b>Mão de obra:</b> ${esc(o.mo.causa) || "causa não informada"}${o.mo.mecanico ? " — " + esc(o.mo.mecanico) : ""}</div>`;
+  else if (o.detalhe) pend = `<div class="pend">${esc(o.detalhe)}</div>`;
+  const rc = o.aberta ? o.reinc : null;
+  const semH = o.aberta && !rc && o.semHistorico;
+  const rbox = rc ? `<div class="rbox"><b>REINCIDÊNCIA — ${rc.n}ª ocorrência em ${CONFIG.reincDias} dias.</b>
+      ${esc(o.sisC)} · ${esc(o.probC)} — voltou em ${rc.voltaEm} dia(s) após a última O.S., que somam ${rc.horas}h paradas.
+      <ul>${rc.ant.slice(0, 3).map(h => `<li>${fmt(h.d)} · O.S. ${h.os}${h.t ? " · " + h.t.toFixed(1) + "h" : ""} — ${esc((h.x || "").slice(0, 60))}</li>`).join("")}
+      ${rc.ant.length > 3 ? `<li>+ ${rc.ant.length - 3} ocorrência(s) anterior(es)</li>` : ""}</ul>
+      ${o.cobrado ? `<div class="cob">✓ Cobrança enviada em ${fmt(o.cobrado)}</div>` : ""}</div>`
+    : (semH ? `<div class="pend" style="border-left:3px solid #A9B6C4;color:var(--ink2)">Sem histórico desta frota carregado — não dá para dizer se é reincidência.</div>` : "");
+  return `<article class="os ${o.aberta && vencida(o) ? 'vencida' : ''}">
+   <div class="os-top">
+    <div class="frota">${o.veic}<span>${esc(o.mod || o.esp)}</span></div>
+    <div class="os-meta">
+      <div class="tags">${rc ? `<span class="tag reinc flash">${rc.n}ª vez · ${rc.voltaEm}d</span>` : ""}<span class="tag tagfr">${esc(o.frente)}</span><span class="tag ${c.cls}">${c.lbl}</span><span class="tag">O.S. ${o.os}</span>
+        <span class="tag">${o.mt}</span><span class="tag">${esc(o.esp)}</span>
+        ${o.aberta && vencida(o) ? '<span class="tag diag flash">retorno vencido</span>' : ''}</div>
+      <div class="veic">${esc(o.desc)} · ${esc(o.ofic)}</div>
+      <div class="motivo">${esc(o.prob) || "—"}</div>
+    </div>
+   </div>
+   ${o.aberta ? `<div class="os-clock">
+      <div class="tempo">${dur(agora() - new Date(o.ab))}<small>parado desde ${fmt(o.ab)}</small></div>
+      <div class="tempo ${nv}">${dur(sr)}<small>sem retorno</small></div>
+      <div class="sla-bar"><div class="sla-fill ${nv}" style="width:${pct}%"></div></div>
+    </div>` : `<div class="os-clock"><div class="tempo">${dur(new Date(o.encerrada) - new Date(o.ab))}<small>parada total · encerrada ${fmt(o.encerrada)}</small></div></div>`}
+   <div class="os-body">
+     ${(function () { const r = o.retrabalho; if (!r || r.n < 3) return ""; const b = r.pc >= 70 ? "b1" : r.pc >= 40 ? "b2" : "b3";
+      return `<span class="rt ${b}">Retrabalho da frota: ${r.pc}% · ${r.re} de ${r.n} O.S. · ${r.h}h paradas</span>` })()}
+     ${(o.resp || o.respFr) ? `<span class="resp">Responsável: ${esc(o.resp || o.respFr)}</span>` : `<span class="resp" style="color:var(--red);background:var(--red-bg)">Sem responsável</span>`}
+     ${o.prevLib ? `<span class="resp" style="background:var(--green-bg);color:var(--green)">Previsão de liberação: ${fmt(o.prevLib)}</span>` : ""}
+     ${rbox}${pend}
+     <div class="ultimo">${ur ? `<b>Último retorno (${fmt(ur.em)}${ur.autor ? " · " + esc(ur.autor) : ""}):</b> ${esc(ur.txt)}` : "<b>Nenhum retorno registrado.</b> A contagem corre desde a abertura."}</div>
+   </div>
+   ${o.aberta ? `<div class="os-actions">
+     <button class="btn btn-dark" data-act="ret" data-os="${o.os}">Registrar retorno</button>
+     <button class="btn btn-line" data-act="det" data-os="${o.os}">Detalhar pendência</button>
+     ${rc ? `<button class="btn btn-red" style="background:var(--red);color:#fff" data-act="cob" data-os="${o.os}">Cobrar reincidência</button>` : ""}</div>`
+    : `<div class="os-actions"><button class="btn btn-line" data-act="det" data-os="${o.os}">Ver histórico</button></div>`}
+  </article>`;
+}
+
+function render() {
+  kpis();
+  chAlerta.classList.toggle("on", filtro.alerta);
+  chSem.classList.toggle("on", filtro.semCls);
+  chReinc.classList.toggle("on", filtro.reinc);
+  chSemH.classList.toggle("on", filtro.semH);
+  btnEncerradas.textContent = filtro.encerradas ? "Ver abertas" : "Ver encerradas";
+  const l = filtrar();
+  cont.textContent = l.length + " O.S. na tela";
+  const g = agrupar(l, CONFIG.groupBy);
+  const chaves = Object.keys(g).sort((a, b) => g[b].length - g[a].length || a.localeCompare(b));
+  grupos.innerHTML = l.length ? chaves.map(k => {
+    const arr = g[k], venc = arr.filter(vencida).length;
+    const hs = Math.round(arr.reduce((s, o) => s + horas(agora() - new Date(o.ab)), 0));
+    return `<div class="gh"><h2>${esc(k)}</h2>
+      <em>${arr.length} O.S.${venc ? ` · <b>${venc} vencida(s)</b>` : ""} · ${hs.toLocaleString("pt-BR")}h paradas</em></div>
+      <div class="grid">${arr.map(card).join("")}</div>`;
+  }).join("") : `<div class="empty">Nenhuma O.S. neste filtro.</div>`;
+  grupos.querySelectorAll("[data-act]").forEach(b => b.onclick = () => b.dataset.act === "ret" ? retornoRapido(b.dataset.os) : b.dataset.act === "cob" ? cobrar(b.dataset.os) : abrir(b.dataset.os));
+}
+
+function opcoes() {
+  const fill = (el, arr, lbl) => { el.innerHTML = `<option value="">${lbl}</option>` + arr.filter(Boolean).sort().map(x => `<option>${esc(x)}</option>`).join("") };
+  fill(fAgrup, [...new Set(OS_LIST.map(o => o.agr))], "Todo agrupamento");
+  fill(fEsp, [...new Set(OS_LIST.map(o => o.esp))], "Toda especialidade");
+  fill(fModelo, [...new Set(OS_LIST.map(o => o.mod))], "Todo modelo");
+  fill(fFrente, [...new Set(OS_LIST.map(o => o.frente))], "Toda frente / atividade");
+  fill(fTipo, [...new Set(OS_LIST.map(o => o.tp))], "Interna, campo e externa");
+  const nomes = [...new Set(OS_LIST.map(o => o.resp).filter(Boolean).concat(OS_LIST.map(o => o.respFr).filter(Boolean)))];
+  dlResp.innerHTML = nomes.map(n => `<option value="${esc(n)}">`).join("");
+  const ativs = [...new Set(OS_LIST.map(o => o.ativ).filter(Boolean))];
+  dlAtiv.innerHTML = ativs.map(n => `<option value="${esc(n)}">`).join("");
+  const frs = [...new Set(OS_LIST.map(o => o.fr).filter(Boolean))];
+  dlFr.innerHTML = frs.map(n => `<option value="${esc(n)}">`).join("");
+  fGroupBy.value = CONFIG.groupBy;
+}
+
+/* ============ modal ============ */
+function achar(os) { return OS_LIST.find(o => o.os === os) }
+function abrir(os) {
+  abertaId = os; const o = achar(os);
+  mFrota.innerHTML = o.veic + `<span>${esc(o.mod || "—")} · ${esc(o.esp)} · O.S. ${o.os}</span>`;
+  const hist = o.retornos.slice().sort((a, b) => new Date(b.em) - new Date(a.em));
+  mBody.innerHTML = `
+  <div class="fs"><h4>Ficha do sistema</h4>
+    <p style="margin:0;font-size:12.5px;line-height:1.6"><b>${esc(o.desc)}</b><br>
+      ${esc(o.esp)} · ${esc(o.mod)}${o.marca ? " · " + esc(o.marca) : ""}<br>
+      Aberta em ${fmt(o.ab)} · parada há <b>${dur(agora() - new Date(o.ab))}</b><br>
+      ${o.mt} · ${o.tp} · ${esc(o.ofic)} · solicitante ${esc(o.sol) || "—"}${o.prog ? " · programada " + fmtd(o.prog) : ""}<br>
+      <span style="color:var(--ink2)">${esc(o.prob)}</span></p></div>
+
+  ${o.reinc ? `<div class="fs" style="border-left:3px solid var(--red)">
+    <h4 style="color:var(--red)">Reincidência — ${o.reinc.n}ª ocorrência em ${CONFIG.reincDias} dias</h4>
+    <p style="margin:0 0 8px;font-size:12.5px;line-height:1.6">${esc(o.sisC)} · ${esc(o.probC)} — voltou em <b>${o.reinc.voltaEm} dia(s)</b>;
+      as ocorrências anteriores somam <b>${o.reinc.horas}h</b> de máquina parada.</p>
+    <ul style="margin:0;padding-left:16px;font-family:var(--mono);font-size:11px;color:var(--ink2);line-height:1.6">
+      ${o.reinc.ant.slice(0, 8).map(h => `<li>${fmt(h.d)} · O.S. ${h.os}${h.t ? " · " + h.t.toFixed(1) + "h" : ""} — ${esc((h.x || "").slice(0, 60))}</li>`).join("")}</ul>
+    <button class="btn btn-dark" style="margin-top:10px;background:var(--red)" id="btnCobrarModal">Gerar cobrança ao responsável</button>
+    ${o.cobrado ? `<span style="margin-left:10px;display:inline-block;font-size:12px;color:var(--green);font-weight:700">✓ cobrada em ${fmt(o.cobrado)}</span>` : ""}
+  </div>` : ""}
+
+  <div class="fs"><h4>Classificação do problema (usada na reincidência)</h4>
+    <div class="row">
+      <div class="f"><label>Sistema</label><select id="fSis">${CONSTS.sisLista.map(x => `<option ${o.sisC === x ? "selected" : ""}>${x}</option>`).join("")}</select></div>
+      <div class="f"><label>Problema</label><select id="fProb"></select></div>
+    </div>
+    <p class="hint">Sugestão automática a partir do texto da O.S. Corrija se estiver errada.</p>
+  </div>
+
+  <div class="fs"><h4>Alocação do equipamento</h4>
+    <div class="row3">
+      <div class="f"><label>Atividade</label><input id="fAtiv" list="dlAtiv" value="${esc(o.ativ)}" placeholder="Transbordo, colheita, transporte"></div>
+      <div class="f"><label>Frente</label><input id="fFr" list="dlFr" value="${esc(o.fr)}" placeholder="F-1"></div>
+      <div class="f"><label>Responsável da frente</label><input id="fRespFr" list="dlResp" value="${esc(o.respFr)}"></div>
+    </div>
+    <p class="hint">Vale para a frota ${o.veic} em todas as O.S. — alimenta o relatório de disponibilidade por frente.</p></div>
+
+  <div class="fs"><h4>Acompanhamento</h4>
+    <div class="row">
+      <div class="f"><label>Responsável pelo acompanhamento</label><input id="fResp" list="dlResp" value="${esc(o.resp)}" placeholder="Quem cobra e responde por esta O.S."></div>
+      <div class="f"><label>Pendência</label>
+        <div class="picks" id="picks">${Object.keys(CONSTS.classes).filter(k => k !== "NAO").map(k => `<button class="pick ${o.classe === k ? 'on' : ''}" data-k="${k}">${CONSTS.classes[k].lbl}</button>`).join("")}</div></div>
+    </div>
+    <div class="row">
+      <div class="f"><label>O que exatamente está travando</label>
+        <textarea id="fDetalhe" placeholder="Ex.: máquina montada, aguardando só a bomba hidráulica">${esc(o.detalhe)}</textarea></div>
+      <div class="f"><label>Previsão de liberação do equipamento</label><input type="datetime-local" id="fPrevLib" value="${li(o.prevLib)}"></div>
+    </div></div>
+
+  <div class="fs" id="boxMat" style="display:${o.classe === "MATERIAL" ? "block" : "none"}">
+    <h4>Material — solicitação, pedido e ação pendente</h4>
+    <div class="f"><label>Peça / componente</label><input id="fPeca" value="${esc(o.item.peca)}" placeholder="Compressor de ar"></div>
+    <div class="row">
+      <div class="f"><label>Nº da solicitação / requisição</label><input id="fSol" value="${esc(o.item.sol)}"></div>
+      <div class="f"><label>Data da solicitação</label><input type="date" id="fSolD" value="${ld(o.item.solData)}"></div></div>
+    <div class="row">
+      <div class="f"><label>Nº do pedido de compra</label><input id="fPed" value="${esc(o.item.ped)}"></div>
+      <div class="f"><label>Data do pedido</label><input type="date" id="fPedD" value="${ld(o.item.pedData)}"></div></div>
+    <div class="f"><label>Ação que falta para a peça chegar</label>
+      <select id="fAcao"><option value="">Selecione a ação pendente</option>
+        ${CONSTS.acoes.map(a => `<option ${o.item.acao === a ? "selected" : ""}>${a}</option>`).join("")}
+        ${o.item.acao && !CONSTS.acoes.includes(o.item.acao) ? `<option selected>${esc(o.item.acao)}</option>` : ""}
+        <option value="__outra">Outra (escrever)</option></select></div>
+    <div class="f" id="boxOutra" style="display:none"><label>Descreva a ação</label><input id="fAcaoTxt"></div>
+    <div class="row3">
+      <div class="f"><label>Quem tem que resolver</label><input id="fAcaoResp" value="${esc(o.item.acaoResp)}" placeholder="Compras, almoxarifado, fornecedor"></div>
+      <div class="f"><label>Fornecedor</label><input id="fForn" value="${esc(o.item.fornec)}"></div>
+      <div class="f"><label>Previsão de chegada</label><input type="date" id="fPrev" value="${ld(o.item.previsao)}"></div></div>
+  </div>
+
+  <div class="fs" id="boxMO" style="display:${o.classe === "MAO_OBRA" ? "block" : "none"}"><h4>Mão de obra</h4>
+    <div class="row"><div class="f"><label>Mecânico / equipe</label><input id="fMec" value="${esc(o.mo.mecanico)}"></div>
+    <div class="f"><label>Motivo da falta</label><input id="fCausa" value="${esc(o.mo.causa)}" placeholder="Equipe em outro atendimento, sem operador"></div></div></div>
+
+  <div class="fs"><h4>Retornos — ${hist.length} registro(s)</h4>
+    ${o.aberta ? `<div class="f"><label>Novo retorno</label><textarea id="fNovo" placeholder="O que foi feito ou combinado agora"></textarea></div>
+    <div class="row"><div class="f"><label>Quem informou</label><input id="fAutor" placeholder="PCM, oficina, comprador"></div>
+    <div class="f"><label>&nbsp;</label><button class="btn btn-dark" id="btnAddRet" style="width:100%;padding:9px">Adicionar retorno</button></div></div>` : ""}
+    <ul class="tl">${hist.length ? hist.map(r => `<li><time>${fmt(r.em)}${r.autor ? " · " + esc(r.autor) : ""}</time><p>${esc(r.txt)}</p></li>`).join("") : '<li style="border:0;padding-left:0"><p style="color:var(--ink2)">Sem retornos. O relógio de cobrança corre desde a abertura.</p></li>'}</ul></div>`;
+
+  mBody.querySelectorAll("#picks .pick").forEach(b => b.onclick = () => {
+    mBody.querySelectorAll("#picks .pick").forEach(x => x.classList.remove("on")); b.classList.add("on");
+    boxMat.style.display = b.dataset.k === "MATERIAL" ? "block" : "none";
+    boxMO.style.display = b.dataset.k === "MAO_OBRA" ? "block" : "none";
+  });
+  const selAcao = document.getElementById("fAcao");
+  if (selAcao) selAcao.onchange = () => { boxOutra.style.display = selAcao.value === "__outra" ? "block" : "none" };
+  const fs = document.getElementById("fSis"), fp = document.getElementById("fProb");
+  const encheProb = () => { fp.innerHTML = (CONSTS.probLista[fs.value] || ["Outros"]).map(x => `<option ${o.probC === x ? "selected" : ""}>${x}</option>`).join("") };
+  fs.onchange = encheProb; encheProb();
+  const add = document.getElementById("btnAddRet");
+  if (add) add.onclick = async () => {
+    const t = document.getElementById("fNovo").value.trim();
+    if (!t) { aviso("Escreva o retorno antes de adicionar."); return }
+    try {
+      await api(`/os/${encodeURIComponent(os)}/retorno`, { method: "POST", body: JSON.stringify({ txt: t, autor: document.getElementById("fAutor").value.trim() }) });
+      await carregarOS(); aviso("Retorno registrado. Contagem zerada."); abrir(os); render();
+    } catch (e) { aviso(e.message) }
+  };
+  const btnCobModal = document.getElementById("btnCobrarModal");
+  if (btnCobModal) btnCobModal.onclick = () => cobrar(o.os);
+  mEncerrar.style.display = o.aberta ? "block" : "none";
+  mask.classList.add("on");
+}
+
+async function salvarModal() {
+  const o = achar(abertaId);
+  const sel = mBody.querySelector("#picks .pick.on");
+  const sisSel = v("fSis"), probSel = v("fProb");
+  let sisOv = "", probOv = "";
+  if (sisSel !== o.sisC || probSel !== o.probC) { sisOv = sisSel; probOv = probSel }
+  let acao = v("fAcao"); if (acao === "__outra") acao = v("fAcaoTxt");
+  const payload = {
+    classe: sel ? sel.dataset.k : "NAO", resp: v("fResp"), detalhe: v("fDetalhe"),
+    prevLib: v("fPrevLib") ? new Date(v("fPrevLib")).toISOString() : "",
+    sisOv, probOv,
+    item: { peca: v("fPeca"), sol: v("fSol"), solData: v("fSolD"), ped: v("fPed"), pedData: v("fPedD"), acao, acaoResp: v("fAcaoResp"), fornec: v("fForn"), previsao: v("fPrev") },
+    mo: { mecanico: v("fMec"), causa: v("fCausa") },
+    aloc: { ativ: v("fAtiv"), fr: v("fFr"), resp: v("fRespFr"), loc: "" },
+  };
+  try {
+    await api(`/os/${encodeURIComponent(abertaId)}`, { method: "PATCH", body: JSON.stringify(payload) });
+    await carregarOS(); mask.classList.remove("on"); opcoes(); render(); aviso("O.S. atualizada.");
+  } catch (e) { aviso(e.message) }
+}
+async function retornoRapido(os) {
+  const o = achar(os);
+  const t = prompt("Retorno da O.S. " + os + " — frota " + o.veic + "\n\nO que mudou ou o que ficou combinado agora?");
+  if (t === null || !t.trim()) return;
+  try {
+    await api(`/os/${encodeURIComponent(os)}/retorno`, { method: "POST", body: JSON.stringify({ txt: t.trim(), autor: "PCM" }) });
+    await carregarOS(); render(); aviso("Retorno registrado. Contagem zerada.");
+  } catch (e) { aviso(e.message) }
+}
+async function nova() {
+  const n = prompt("Número da O.S.:"); if (!n) return;
+  if (OS_LIST.some(x => x.os === n.trim())) { aviso("Essa O.S. já está na lista."); return }
+  const veic = prompt("Frota / equipamento:") || "", prob = prompt("Descrição do problema:") || "";
+  try {
+    await api("/os", { method: "POST", body: JSON.stringify({ os: n.trim(), veic: veic.trim(), prob: prob.trim() }) });
+    await carregarOS(); opcoes(); render(); abrir(n.trim());
+  } catch (e) { aviso(e.message) }
+}
+
+/* ============ carregamento ============ */
+async function carregarOS() {
+  OS_LIST = await api('/os');
+}
+async function carregarTudo() {
+  const [consts, cfg] = await Promise.all([api('/constants'), api('/config')]);
+  CONSTS = consts; CONFIG = cfg;
+  document.getElementById("sla").value = CONFIG.sla;
+  await carregarOS();
+  opcoes(); render();
+}
+
+async function atualizarAgora() {
+  btnAtualizar.disabled = true;
+  try {
+    const r = await api('/sync/atualizar', { method: 'POST' });
+    aviso(r.abertas + " O.S. abertas · " + r.frota + " frotas atualizadas. Histórico sincronizando…");
+    await carregarOS(); opcoes(); render();
+    pollSyncStatus();
+  } catch (e) { aviso(e.message) } finally { btnAtualizar.disabled = false }
+}
+function pollSyncStatus() {
+  const t = setInterval(async () => {
+    const s = await api('/sync/status');
+    if (s.status === 'concluido') {
+      clearInterval(t); aviso("Histórico sincronizado: " + s.novos + " O.S. novas."); await carregarOS(); render();
+    } else if (s.status === 'erro') { clearInterval(t); aviso("Falha no sync de histórico: " + s.mensagem); }
+  }, 4000);
+}
+
+/* ============ relógio / eventos ============ */
+function relogio() {
+  const d = agora(); clk.textContent = d.toLocaleTimeString("pt-BR");
+  clkd.textContent = d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" });
+}
+btnNova.onclick = nova;
+btnAtualizar.onclick = atualizarAgora;
+btnEncerradas.onclick = () => { filtro.encerradas = !filtro.encerradas; render() };
+chAlerta.onclick = () => { filtro.alerta = !filtro.alerta; render() };
+chSem.onclick = () => { filtro.semCls = !filtro.semCls; render() };
+chReinc.onclick = () => { filtro.reinc = !filtro.reinc; render() };
+chSemH.onclick = () => { filtro.semH = !filtro.semH; render() };
+fAgrup.onchange = e => { filtro.agr = e.target.value; render() };
+fFrente.onchange = e => { filtro.frente = e.target.value; render() };
+fEsp.onchange = e => { filtro.esp = e.target.value; render() };
+fModelo.onchange = e => { filtro.mod = e.target.value; render() };
+fTipo.onchange = e => { filtro.tp = e.target.value; render() };
+fClasse.onchange = e => { filtro.classe = e.target.value; render() };
+fBusca.oninput = e => { filtro.busca = e.target.value; render() };
+fGroupBy.onchange = async e => { CONFIG.groupBy = e.target.value; await api('/config', { method: 'PUT', body: JSON.stringify({ groupBy: CONFIG.groupBy }) }); render() };
+document.getElementById("sla").onchange = async e => { const x = parseFloat(e.target.value); if (x > 0) { CONFIG.sla = x; await api('/config', { method: 'PUT', body: JSON.stringify({ sla: x }) }); render() } };
+mX.onclick = () => mask.classList.remove("on");
+mask.onclick = e => { if (e.target === mask) mask.classList.remove("on") };
+mSalvar.onclick = salvarModal;
+mEncerrar.onclick = async () => {
+  const o = achar(abertaId);
+  if (!confirm("Encerrar a O.S. " + abertaId + " (frota " + o.veic + ")?")) return;
+  try {
+    await api(`/os/${encodeURIComponent(abertaId)}/encerrar`, { method: "POST" });
+    await carregarOS(); mask.classList.remove("on"); render(); aviso("O.S. encerrada.");
+  } catch (e) { aviso(e.message) }
+};
+mExcluir.onclick = async () => {
+  if (!confirm("Limpar os dados do PCM desta O.S.? A ficha do sistema continua na lista.")) return;
+  try {
+    await api(`/os/${encodeURIComponent(abertaId)}`, { method: "DELETE" });
+    await carregarOS(); mask.classList.remove("on"); render(); aviso("Dados limpos.");
+  } catch (e) { aviso(e.message) }
+};
+
+(async () => {
+  relogio(); setInterval(relogio, 1000);
+  try { await carregarTudo(); } catch (e) { aviso("Falha ao carregar dados: " + e.message); }
+  setInterval(() => { if (!mask.classList.contains("on")) { carregarOS().then(render) } }, 60000);
+})();
