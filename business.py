@@ -161,7 +161,8 @@ REGRAS = [
     ("*", _t(r"(pneu|calibragem|borracharia|rodagem)"), "Pneus / Rodagem",
      lambda t: "Pneu furado / calibragem" if re.search(r"(furado|vazio|murcho|calibr)", t)
      else ("Roda / parafuso / cubo" if re.search(r"(parafuso|roda|cubo)", t) else "Troca de pneu")),
-    ("*", _t(r"(parafuso da roda|roda solta|aro)"), "Pneus / Rodagem", "Roda / parafuso / cubo"),
+    # \b no aro: sem ele "farol" casava aqui e virava problema de rodagem
+    ("*", _t(r"(parafuso da roda|roda solta|\baro\b)"), "Pneus / Rodagem", "Roda / parafuso / cubo"),
     ("COLHEDORA", _t(r"(esteira|material rodante|rolete|sapata|roda motriz|tensionador)"), "Rodante / Esteira", "Esteira / material rodante"),
     ("PESADA", _t(r"(esteira|material rodante|rolete|sapata)"), "Rodante / Esteira", "Esteira / material rodante"),
     ("*", _t(r"(mola|feixe de mola|amortecedor|suspensao)"), "Suspensão / Direção", "Mola / feixe / amortecedor"),
@@ -248,6 +249,70 @@ def classificar(txt, esp, regras_customizadas=None):
     return classificar_base(txt, esp)
 
 
+# a oficina lança vários problemas numa descrição só, separados por / ou ;
+# ("VAZAMENTO DE ADITIVO / TURBINA TRAVADA / TROCAR MANGUEIRA DO FREIO MOTOR").
+# Classificar o texto inteiro fazia a primeira regra que casasse engolir o resto —
+# no exemplo acima a O.S. virava só "vazamento de mangueira" e as outras duas
+# falhas sumiam da reincidência.
+_SEPARADOR = re.compile(r"[;/]")
+_SO_PONTUACAO = re.compile(r"^[\s\-.,:·•ºª°()\d]*$")
+
+
+def _remendar(anterior, proximo):
+    """A quebra por '/' parte no meio de 'L/D', 'S/N', 'P/' e de datas — nesses casos
+    o lado esquerdo acaba numa letra solta ou os dois lados são números."""
+    if not anterior or not proximo:
+        return True
+    tokens = anterior.split()
+    ultimo = tokens[-1] if tokens else ""
+    if len(ultimo) == 1 or len(proximo) <= 2:
+        return True
+    return ultimo[-1].isdigit() and proximo[0].isdigit()
+
+
+def separar_itens(txt):
+    """Quebra a descrição da O.S. nos problemas que ela junta. Devolve os trechos
+    na ordem em que foram lançados; se nada sobrar, devolve o texto original."""
+    if not (txt or "").strip():
+        return []
+    partes = []
+    for bruto in _SEPARADOR.split(txt):
+        pedaco = bruto.strip()
+        if partes and _remendar(partes[-1], pedaco):
+            partes[-1] = (partes[-1] + "/" + pedaco).strip("/ ")
+        else:
+            partes.append(pedaco)
+    itens = [p for p in partes if len(p) >= 3 and not _SO_PONTUACAO.match(p)]
+    return itens or [txt.strip()]
+
+
+def classificar_itens(txt, esp, regras_customizadas=None):
+    """Uma classificação por problema citado na descrição: lista de
+    {x: trecho, s: sistema, p: problema}, na ordem lançada e sem repetir o mesmo par."""
+    itens = [
+        {"x": trecho, "s": s, "p": p}
+        for trecho in separar_itens(txt)
+        for s, p in [classificar(trecho, esp, regras_customizadas)]
+    ]
+    if not itens:
+        return [{"x": "", "s": SEM_CLASSIFICACAO, "p": "Outros"}]
+    vistos, unicos = set(), []
+    for i in itens:
+        chave = (i["s"], i["p"])
+        if chave not in vistos:
+            vistos.add(chave)
+            unicos.append(i)
+    return unicos
+
+
+def classificar_principal(txt, esp, regras_customizadas=None):
+    """O par (sistema, problema) que representa a O.S.: o primeiro problema lançado
+    que a gente consegue classificar — não o primeiro que casar com alguma regra."""
+    itens = classificar_itens(txt, esp, regras_customizadas)
+    i = next((x for x in itens if x["s"] != SEM_CLASSIFICACAO), itens[0])
+    return (i["s"], i["p"])
+
+
 CLASSES = {
     "MATERIAL": {"lbl": "Falta de material", "cls": "mat"},
     "MAO_OBRA": {"lbl": "Falta de mão de obra", "cls": "mao"},
@@ -268,22 +333,47 @@ GRUPO_LBL = {
 }
 
 
+def pares(evento):
+    """Pares (sistema, problema) de um evento, para comparar reincidência. Aceita a
+    lista `itens` e cai no par único s/p pra histórico ainda não reclassificado.
+
+    Trecho não classificado só conta quando é o único: senão ele casaria com
+    qualquer outra O.S. não classificada da frota e inventaria reincidência."""
+    itens = evento.get("itens")
+    if not itens:
+        return {(evento.get("s"), evento.get("p"))}
+    todos = {(i["s"], i["p"]) if isinstance(i, dict) else tuple(i) for i in itens}
+    classificados = {par for par in todos if par[0] != SEM_CLASSIFICACAO}
+    return classificados or todos
+
+
 def calcular_reincidencia(evento, eventos_por_frota, janela_dias):
     """evento e itens de eventos_por_frota são dicts com: os, veic, d (datetime), t (horas),
-    x (texto), s (sistema), p (problema)."""
+    x (texto), s (sistema), p (problema) e, quando houver, itens (lista de pares).
+    Reincide quando a frota repete *qualquer* um dos problemas da O.S. dentro da janela."""
     ab = evento["d"]
     lim = timedelta(days=janela_dias)
-    candidatos = [
-        h for h in eventos_por_frota.get(evento["veic"], [])
-        if h["os"] != evento["os"] and h["s"] == evento["s"] and h["p"] == evento["p"]
-    ]
-    ant = [h for h in candidatos if timedelta(0) < (ab - h["d"]) <= lim]
+    meus = pares(evento)
+    ant, casados = [], []
+    for h in eventos_por_frota.get(evento["veic"], []):
+        if h["os"] == evento["os"] or not (timedelta(0) < (ab - h["d"]) <= lim):
+            continue
+        comuns = meus & pares(h)
+        if not comuns:
+            continue
+        ant.append(h)
+        for c in comuns:
+            if c not in casados:
+                casados.append(c)
     if not ant:
         return None
     ant.sort(key=lambda h: h["d"], reverse=True)
     volta_em = max(0, round((ab - ant[0]["d"]).total_seconds() / 86400))
     horas = round(sum(h.get("t") or 0 for h in ant))
-    return {"ant": ant, "n": len(ant) + 1, "voltaEm": volta_em, "horas": horas}
+    return {
+        "ant": ant, "n": len(ant) + 1, "voltaEm": volta_em, "horas": horas,
+        "pares": [{"s": s, "p": p} for s, p in casados],
+    }
 
 
 def clusters_nao_classificados(historico, abertas, fam_filtro=None, busca=None, limite=120):
@@ -330,7 +420,7 @@ def cobertura(historico, abertas):
 
 
 def calcular_retrabalho(historico, janela_dias):
-    """historico: lista de dicts {veic, d, t, s, p} — só O.S. encerradas."""
+    """historico: lista de dicts {veic, d, t, s, p, itens} — só O.S. encerradas."""
     lim = timedelta(days=janela_dias)
     por_frota = {}
     for h in historico:
@@ -342,8 +432,9 @@ def calcular_retrabalho(historico, janela_dias):
         re_count, horas, horas_re = 0, 0.0, 0.0
         for i, h in enumerate(arr):
             horas += h.get("t") or 0
+            meus = pares(h)
             anterior = any(
-                x["s"] == h["s"] and x["p"] == h["p"] and (h["d"] - x["d"]) <= lim
+                (meus & pares(x)) and (h["d"] - x["d"]) <= lim
                 for x in arr[:i]
             )
             if anterior:

@@ -121,7 +121,7 @@ function tvTabela(arr, tipo) {
         <div class="tvrow h" style="grid-template-columns:${cols}"><span>Frota</span><span>Problema</span><span>Responsável</span><span>Ocorr.</span><span>Voltou em</span><span>Parado</span></div>
         ${fatia.map(o => `<div class="tvrow late" style="grid-template-columns:${cols}">
           <div class="r-frota">${o.veic}<u>${esc(o.mod || o.esp)}</u></div>
-          <div class="r-txt">${esc(o.probC)}<u>${esc(o.sisC)} · O.S. ${o.os}${o.cobrado ? " · cobrada" : ""}</u></div>
+          <div class="r-txt">${esc((o.reinc.pares && o.reinc.pares[0] ? o.reinc.pares[0].p : o.probC))}<u>${esc(o.reinc.pares && o.reinc.pares[0] ? o.reinc.pares[0].s : o.sisC)} · O.S. ${o.os}${o.reinc.pares && o.reinc.pares.length > 1 ? " · +" + (o.reinc.pares.length - 1) : ""}${o.cobrado ? " · cobrada" : ""}</u></div>
           <div class="r-txt">${esc(o.resp || o.respFr) || '<span style="color:var(--tv-red)">definir</span>'}</div>
           <div class="r-num late">${o.reinc.n}ª</div><div class="r-num late">${o.reinc.voltaEm}d</div>
           <div class="r-num">${dur(agora() - new Date(o.ab))}</div></div>`).join("")}

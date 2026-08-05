@@ -29,7 +29,8 @@ function msgCobranca(o, dest) {
   L.push("");
   L.push("Frota " + o.veic + " — " + (o.desc || o.mod || "") + (o.frente && o.frente !== "SEM FRENTE DEFINIDA" ? " · " + o.frente : ""));
   L.push("O.S. " + o.os + " aberta em " + fmt(o.ab) + " · parada há " + dur(agora() - new Date(o.ab)));
-  L.push("Problema: " + o.sisC + " — " + o.probC);
+  const reps = (rc.pares && rc.pares.length ? rc.pares : [{ s: o.sisC, p: o.probC }]);
+  L.push("Problema: " + reps.map(i => i.s + " — " + i.p).join(" + "));
   L.push("Relato da O.S.: " + (o.prob || "—"));
   L.push("");
   L.push("Esta é a " + rc.n + "ª ocorrência do MESMO problema nesta frota em " + CONFIG.reincDias + " dias.");

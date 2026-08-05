@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 from flask_sqlalchemy import SQLAlchemy
@@ -70,13 +71,21 @@ class OsHistorico(db.Model):
     # regra customizada nova é criada.
     sistema = db.Column(db.String(120), default="")
     problema = db.Column(db.String(120), default="")
+    # todos os problemas da descrição, JSON [[sistema, problema], ...]; sistema/problema
+    # acima continuam sendo o principal. Vazio em linha ainda não reclassificada.
+    itens = db.Column(db.Text, default="")
+
+    def lista_itens(self):
+        if not self.itens:
+            return [{"s": self.sistema, "p": self.problema}]
+        return [{"s": s, "p": p} for s, p in json.loads(self.itens)]
 
     def to_dict(self):
         return {
             "os": self.os, "veic": self.veic, "d": _iso(self.data_abertura),
             "lib": _iso(self.data_liberacao), "t": self.horas_parada or 0,
             "x": self.texto, "m": self.tipo_manutencao,
-            "s": self.sistema, "p": self.problema,
+            "s": self.sistema, "p": self.problema, "i": self.lista_itens(),
         }
 
 

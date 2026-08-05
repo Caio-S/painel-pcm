@@ -97,6 +97,10 @@ main{max-width:1660px;margin:0 auto;padding:16px 20px 60px}
 .tag.ext{background:#E9EDF2;color:#4A5A6B}.tag.none{background:#fff;color:var(--red);border:1px dashed var(--red)}
 .veic{font-size:11.5px;color:var(--ink2);font-weight:600;margin-bottom:3px}
 .motivo{font-size:12.5px;line-height:1.45;word-break:break-word}
+/* um chip por problema quando a descrição da O.S. junta vários */
+.probs{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}
+.prob{font-size:10px;font-weight:700;padding:2px 6px;border-radius:3px;background:#F1F5F9;color:var(--ink2);border:1px solid var(--line)}
+.prob-re{background:var(--red-bg);color:var(--red);border-color:#EFC0BB}
 .os-clock{padding:9px 13px;background:#F7F9FB;border-top:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;gap:14px;align-items:center}
 .tempo{font-family:var(--mono);font-size:20px;font-weight:700;line-height:1;white-space:nowrap}
 .tempo small{display:block;font-family:var(--sans);font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink2);font-weight:700;margin-top:5px}
@@ -147,6 +151,10 @@ label{display:block;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-t
 .mfoot{display:flex;gap:8px;padding:11px 18px;background:#fff;border-top:1px solid var(--line)}
 .grow{flex:1}
 .hint{font-size:11px;color:var(--ink2);line-height:1.5;margin:-2px 0 9px}
+.itens-os{margin:0 0 9px;padding-left:16px;font-size:12px;line-height:1.5}
+.itens-os li{margin-bottom:3px}
+.itens-os li.re b{color:var(--red)}
+.itens-os em{display:block;font-family:var(--mono);font-size:10.5px;color:var(--ink2);font-style:normal}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:11px 18px;border-radius:4px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .25s;z-index:80;border-left:3px solid var(--gold)}
 .toast.on{opacity:1}
 

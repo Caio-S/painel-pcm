@@ -2,6 +2,7 @@
 e histórico incremental (em thread de background — a janela completa é grande demais
 pra um request síncrono, mesmo limite de timeout de proxy já documentado no projeto CTT)."""
 
+import json
 import threading
 from datetime import datetime, timedelta
 
@@ -73,6 +74,13 @@ def _frota_especialidade_map():
     return dict(db.session.query(Frota.codigo, Frota.especialidade).all())
 
 
+def _classificar(texto, esp, regras):
+    """Principal + todos os problemas da descrição, já serializados pro banco."""
+    itens = business.classificar_itens(texto, esp, regras)
+    sis, prob = business.classificar_principal(texto, esp, regras)
+    return sis, prob, json.dumps([[i["s"], i["p"]] for i in itens], ensure_ascii=False)
+
+
 def reclassificar_historico():
     """Recalcula sistema/problema de todo o histórico — chamado quando uma regra
     customizada nova é criada/removida na tela de Classificação (as ~60 regras fixas
@@ -81,8 +89,7 @@ def reclassificar_historico():
     regras = _regras_customizadas()
     total = 0
     for h in OsHistorico.query.yield_per(500):
-        sis, prob = business.classificar(h.texto, esp_map.get(h.veic, ""), regras)
-        h.sistema, h.problema = sis, prob
+        h.sistema, h.problema, h.itens = _classificar(h.texto, esp_map.get(h.veic, ""), regras)
         total += 1
     db.session.commit()
     return total
@@ -102,20 +109,20 @@ def _upsert_historico(rows):
             db.session.query(OsHistorico.os).filter(OsHistorico.os.in_(ids)).all()
         }
         for r in lote:
-            sis, prob = business.classificar(r["texto"], esp_map.get(r["veic"], ""), regras)
+            sis, prob, itens = _classificar(r["texto"], esp_map.get(r["veic"], ""), regras)
             if r["os"] in existentes:
                 db.session.query(OsHistorico).filter_by(os=r["os"]).update({
                     "veic": r["veic"], "data_abertura": r["data_abertura"],
                     "data_liberacao": r["data_liberacao"], "horas_parada": r["horas_parada"],
                     "texto": r["texto"], "tipo_manutencao": r["tipo_manutencao"],
-                    "sistema": sis, "problema": prob,
+                    "sistema": sis, "problema": prob, "itens": itens,
                 })
             else:
                 db.session.add(OsHistorico(
                     os=r["os"], veic=r["veic"], data_abertura=r["data_abertura"],
                     data_liberacao=r["data_liberacao"], horas_parada=r["horas_parada"],
                     texto=r["texto"], tipo_manutencao=r["tipo_manutencao"],
-                    sistema=sis, problema=prob,
+                    sistema=sis, problema=prob, itens=itens,
                 ))
                 novos += 1
         db.session.flush()

@@ -1,8 +1,10 @@
+import json
 import os
 from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request
+from sqlalchemy import inspect, text
 
 import business
 import sync
@@ -47,8 +49,22 @@ app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=14)
 
 db.init_app(app)
 
+
+def _migrar():
+    """db.create_all() cria tabela nova mas não coluna nova em tabela que já existe —
+    o histórico em produção tem dezenas de milhares de linhas e não dá pra recriar."""
+    insp = inspect(db.engine)
+    if not insp.has_table("pcm_os_historico"):
+        return
+    colunas = {c["name"] for c in insp.get_columns("pcm_os_historico")}
+    if "itens" not in colunas:
+        db.session.execute(text("ALTER TABLE pcm_os_historico ADD COLUMN itens TEXT"))
+        db.session.commit()
+
+
 with app.app_context():
     db.create_all()
+    _migrar()
 
 
 def get_meta(chave, default=None):
@@ -162,14 +178,19 @@ def api_os_list():
 
     hist_rows = db.session.query(
         OsHistorico.os, OsHistorico.veic, OsHistorico.data_abertura,
-        OsHistorico.horas_parada, OsHistorico.sistema, OsHistorico.problema, OsHistorico.texto,
+        OsHistorico.horas_parada, OsHistorico.sistema, OsHistorico.problema,
+        OsHistorico.texto, OsHistorico.itens,
     ).all()
+
+    def _itens_hist(h):
+        return json.loads(h.itens) if h.itens else [[h.sistema, h.problema]]
 
     eventos_por_frota = {}
     for h in hist_rows:
         eventos_por_frota.setdefault(h.veic, []).append({
             "os": h.os, "veic": h.veic, "d": h.data_abertura,
             "t": h.horas_parada or 0, "s": h.sistema, "p": h.problema, "x": h.texto,
+            "itens": _itens_hist(h),
         })
     frotas_com_historico = {h.veic for h in hist_rows}
 
@@ -178,19 +199,24 @@ def api_os_list():
     for o in abertas:
         d = detalhes_por_os.get(o.os)
         det_dict = d.to_dict() if d else _vazio_detalhe_dict(o.os)
+        itens = business.classificar_itens(o.prob, o.esp, regras)
         if det_dict["sisOv"] and det_dict["probOv"]:
+            # correção manual do PCM manda: vira o único problema da O.S.
             sis, prob = det_dict["sisOv"], det_dict["probOv"]
+            itens = [{"x": o.prob, "s": sis, "p": prob}]
         else:
-            sis, prob = business.classificar(o.prob, o.esp, regras)
+            sis, prob = business.classificar_principal(o.prob, o.esp, regras)
 
         eventos_por_frota.setdefault(o.veic, []).append({
             "os": o.os, "veic": o.veic, "d": o.ab, "t": 0, "s": sis, "p": prob, "x": o.prob,
+            "itens": itens,
         })
 
         a = aloc_por_frota.get(o.veic)
         item = dict(o.to_dict())
         item.update(det_dict)
         item["sisC"], item["probC"] = sis, prob
+        item["itensC"] = itens
         item["ativ"] = a.atividade if a else ""
         item["fr"] = a.frente if a else ""
         item["respFr"] = a.responsavel if a else ""
@@ -200,18 +226,22 @@ def api_os_list():
         resultado.append(item)
 
     for item in resultado:
-        evento = {"os": item["os"], "veic": item["veic"], "d": item["_ab_dt"], "s": item["sisC"], "p": item["probC"]}
+        evento = {
+            "os": item["os"], "veic": item["veic"], "d": item["_ab_dt"],
+            "s": item["sisC"], "p": item["probC"], "itens": item["itensC"],
+        }
         r = business.calcular_reincidencia(evento, eventos_por_frota, cfg["reincDias"])
         item["reinc"] = None
         if r:
             item["reinc"] = {
-                "n": r["n"], "voltaEm": r["voltaEm"], "horas": r["horas"],
+                "n": r["n"], "voltaEm": r["voltaEm"], "horas": r["horas"], "pares": r["pares"],
                 "ant": [{"os": h["os"], "d": h["d"].isoformat(), "t": h["t"], "x": h["x"]} for h in r["ant"][:8]],
             }
         del item["_ab_dt"]
 
     retrabalho = business.calcular_retrabalho(
-        [{"veic": h.veic, "d": h.data_abertura, "t": h.horas_parada or 0, "s": h.sistema, "p": h.problema} for h in hist_rows],
+        [{"veic": h.veic, "d": h.data_abertura, "t": h.horas_parada or 0,
+          "s": h.sistema, "p": h.problema, "itens": _itens_hist(h)} for h in hist_rows],
         cfg["reincDias"],
     )
     for item in resultado:
@@ -416,7 +446,8 @@ def api_frota_historico(codigo):
     abertas = OsAberta.query.filter_by(veic=codigo).order_by(OsAberta.ab.desc()).all()
     cfg = _config()
     historico_dicts = [
-        {"veic": h.veic, "d": h.data_abertura, "t": h.horas_parada or 0, "s": h.sistema, "p": h.problema}
+        {"veic": h.veic, "d": h.data_abertura, "t": h.horas_parada or 0,
+         "s": h.sistema, "p": h.problema, "itens": h.lista_itens()}
         for h in hist
     ]
     rt = business.calcular_retrabalho(historico_dicts, cfg["reincDias"])
@@ -536,7 +567,7 @@ def _historico_e_abertas_para_classificacao():
         if d and d.sis_ov and d.prob_ov:
             sis = d.sis_ov
         else:
-            sis, _ = business.classificar(o.prob, o.esp, regras)
+            sis, _ = business.classificar_principal(o.prob, o.esp, regras)
         abertas.append({"prob": o.prob, "veic": o.veic, "sisC": sis, "esp": o.esp})
     return historico, abertas
 

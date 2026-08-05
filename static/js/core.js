@@ -110,6 +110,22 @@ function blocoMat(o) {
     <div class="kv"><span class="${s ? '' : 'warn'}">${gap}</span></div>
     <div class="acao">▸ ${it.acao ? "Falta: " + esc(it.acao) + (it.acaoResp ? " — " + esc(it.acaoResp) : "") : "Ação pendente não definida"}</div></div>`;
 }
+/* a descrição da O.S. costuma juntar vários problemas; itensC traz um por problema
+   e reinc.pares diz qual deles foi o que voltou */
+function itens(o) { return o.itensC && o.itensC.length ? o.itensC : [{ s: o.sisC, p: o.probC }] }
+function listaPares(pares, o) {
+  const arr = (pares && pares.length) ? pares : [{ s: o.sisC, p: o.probC }];
+  return arr.map(i => `<b>${esc(i.s)} · ${esc(i.p)}</b>`).join(" + ");
+}
+function chipsProblemas(o) {
+  const l = itens(o), rp = new Set(((o.reinc && o.reinc.pares) || []).map(i => i.s + "|" + i.p));
+  if (l.length < 2) return "";
+  return `<div class="probs">${l.map(i => {
+    const re = rp.has(i.s + "|" + i.p);
+    return `<span class="prob${re ? " prob-re" : ""}" title="${esc(i.x || "")}">${esc(i.s)} · ${esc(i.p)}${re ? " ↺" : ""}</span>`;
+  }).join("")}</div>`;
+}
+
 function card(o) {
   const sr = semRet(o), pct = Math.min(100, horas(sr) / CONFIG.sla * 100);
   const nv = pct >= 100 ? "late" : pct >= 70 ? "warn" : "ok";
@@ -122,7 +138,7 @@ function card(o) {
   const rc = o.aberta ? o.reinc : null;
   const semH = o.aberta && !rc && o.semHistorico;
   const rbox = rc ? `<div class="rbox"><b>REINCIDÊNCIA — ${rc.n}ª ocorrência em ${CONFIG.reincDias} dias.</b>
-      ${esc(o.sisC)} · ${esc(o.probC)} — voltou em ${rc.voltaEm} dia(s), ${rc.horas}h paradas nas ocorrências anteriores.
+      ${listaPares(rc.pares, o)} — voltou em ${rc.voltaEm} dia(s), ${rc.horas}h paradas nas ocorrências anteriores.
       <button class="linklike" data-frota-hist="${o.veic}">Ver histórico da frota →</button>
       ${o.cobrado ? `<div class="cob">✓ Cobrança enviada em ${fmt(o.cobrado)}</div>` : ""}</div>`
     : (semH ? `<div class="pend" style="border-left:3px solid #A9B6C4;color:var(--ink2)">Sem histórico desta frota carregado — não dá para dizer se é reincidência.</div>` : "");
@@ -134,6 +150,7 @@ function card(o) {
         ${o.aberta && vencida(o) ? '<span class="tag diag flash">retorno vencido</span>' : ''}</div>
       <div class="veic">${esc(o.desc)} · ${esc(o.esp)} · O.S. ${o.os} · ${esc(o.ofic)}</div>
       <div class="motivo">${esc(o.prob) || "—"}</div>
+      ${chipsProblemas(o)}
     </div>
    </div>
    ${o.aberta ? `<div class="os-clock">
@@ -210,7 +227,7 @@ function abrir(os) {
 
   ${o.reinc ? `<div class="fs" style="border-left:3px solid var(--red)">
     <h4 style="color:var(--red)">Reincidência — ${o.reinc.n}ª ocorrência em ${CONFIG.reincDias} dias</h4>
-    <p style="margin:0 0 8px;font-size:12.5px;line-height:1.6">${esc(o.sisC)} · ${esc(o.probC)} — voltou em <b>${o.reinc.voltaEm} dia(s)</b>;
+    <p style="margin:0 0 8px;font-size:12.5px;line-height:1.6">${listaPares(o.reinc.pares, o)} — voltou em <b>${o.reinc.voltaEm} dia(s)</b>;
       as ocorrências anteriores somam <b>${o.reinc.horas}h</b> de máquina parada.</p>
     <ul style="margin:0;padding-left:16px;font-family:var(--mono);font-size:11px;color:var(--ink2);line-height:1.6">
       ${o.reinc.ant.slice(0, 8).map(h => `<li>${fmt(h.d)} · O.S. ${h.os}${h.t ? " · " + h.t.toFixed(1) + "h" : ""} — ${esc((h.x || "").slice(0, 60))}</li>`).join("")}</ul>
@@ -219,6 +236,12 @@ function abrir(os) {
   </div>` : ""}
 
   <div class="fs"><h4>Classificação do problema (usada na reincidência)</h4>
+    ${itens(o).length > 1 ? `<ul class="itens-os">${itens(o).map(i => {
+      const re = ((o.reinc && o.reinc.pares) || []).some(x => x.s === i.s && x.p === i.p);
+      return `<li${re ? ' class="re"' : ""}><b>${esc(i.s)} · ${esc(i.p)}</b>${re ? " — reincidiu" : ""}<em>${esc(i.x || "")}</em></li>`;
+    }).join("")}</ul>
+    <p class="hint">A descrição lançou ${itens(o).length} problemas; todos entram na reincidência.
+      Os campos abaixo trocam a classificação da O.S. inteira por um problema só.</p>` : ""}
     <div class="row">
       <div class="f"><label>Sistema</label><select id="fSis">${CONSTS.sisLista.map(x => `<option ${o.sisC === x ? "selected" : ""}>${x}</option>`).join("")}</select></div>
       <div class="f"><label>Problema</label><select id="fProb"></select></div>
