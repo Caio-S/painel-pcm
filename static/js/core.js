@@ -122,12 +122,14 @@ function listaPares(pares, o) {
   const arr = (pares && pares.length) ? pares : [{ s: o.sisC, p: o.probC }];
   return arr.map(i => `<b>${esc(i.s)} · ${esc(i.p)}</b>`).join(" + ");
 }
+function rotina(sis) { return (CONSTS.sisRotina || []).includes(sis) }
 function chipsProblemas(o) {
   const l = itens(o), rp = new Set(((o.reinc && o.reinc.pares) || []).map(i => i.s + "|" + i.p));
   if (l.length < 2) return "";
   return `<div class="probs">${l.map(i => {
-    const re = rp.has(i.s + "|" + i.p);
-    return `<span class="prob${re ? " prob-re" : ""}" title="${esc(i.x || "")}">${esc(i.s)} · ${esc(i.p)}${re ? " ↺" : ""}</span>`;
+    const re = rp.has(i.s + "|" + i.p), rot = rotina(i.s);
+    const t = rot ? "serviço programado — não conta reincidência" : (i.x || "");
+    return `<span class="prob${re ? " prob-re" : rot ? " prob-rot" : ""}" title="${esc(t)}">${esc(i.s)} · ${esc(i.p)}${re ? " ↺" : ""}</span>`;
   }).join("")}</div>`;
 }
 

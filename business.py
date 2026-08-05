@@ -218,6 +218,9 @@ REGRAS = [
 ]
 
 SEM_CLASSIFICACAO = "Outros / Não Classificado"
+# manutenção programada: repetir faz parte do plano, não é falha que voltou.
+# Fica fora da reincidência e do retrabalho.
+SISTEMAS_ROTINA = {"Lavagem / Preventiva / Pit Stop"}
 
 
 def classificar_base(txt, esp):
@@ -337,14 +340,20 @@ def pares(evento):
     """Pares (sistema, problema) de um evento, para comparar reincidência. Aceita a
     lista `itens` e cai no par único s/p pra histórico ainda não reclassificado.
 
+    Serviço de rotina fica de fora: lavagem, lubrificação e preventiva acontecem
+    em intervalo fixo, então repetir é o esperado — contá-las como reincidência
+    enchia o painel de "85ª ocorrência" que ninguém tem o que cobrar.
+
     Trecho não classificado só conta quando é o único: senão ele casaria com
     qualquer outra O.S. não classificada da frota e inventaria reincidência."""
     itens = evento.get("itens")
     if not itens:
-        return {(evento.get("s"), evento.get("p"))}
+        par = (evento.get("s"), evento.get("p"))
+        return set() if par[0] in SISTEMAS_ROTINA else {par}
     todos = {(i["s"], i["p"]) if isinstance(i, dict) else tuple(i) for i in itens}
-    classificados = {par for par in todos if par[0] != SEM_CLASSIFICACAO}
-    return classificados or todos
+    falhas = {par for par in todos if par[0] not in SISTEMAS_ROTINA}
+    classificados = {par for par in falhas if par[0] != SEM_CLASSIFICACAO}
+    return classificados or falhas
 
 
 def calcular_reincidencia(evento, eventos_por_frota, janela_dias):

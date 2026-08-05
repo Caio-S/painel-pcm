@@ -101,6 +101,8 @@ main{max-width:1660px;margin:0 auto;padding:16px 20px 60px}
 .probs{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}
 .prob{font-size:10px;font-weight:700;padding:2px 6px;border-radius:3px;background:#F1F5F9;color:var(--ink2);border:1px solid var(--line)}
 .prob-re{background:var(--red-bg);color:var(--red);border-color:#EFC0BB}
+/* serviço programado: fica apagado porque não entra na reincidência */
+.prob-rot{background:#fff;color:#8A97A6;border-style:dashed}
 .os-clock{padding:9px 13px;background:#F7F9FB;border-top:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;gap:14px;align-items:center}
 .tempo{font-family:var(--mono);font-size:20px;font-weight:700;line-height:1;white-space:nowrap}
 .tempo small{display:block;font-family:var(--sans);font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink2);font-weight:700;margin-top:5px}

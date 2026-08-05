@@ -154,6 +154,7 @@ def api_constants():
         "familias": business.FAMILIAS, "sisLista": business.SIS_LISTA,
         "probLista": business.PROB_LISTA, "classes": business.CLASSES,
         "acoes": business.ACOES, "grupoLbl": business.GRUPO_LBL,
+        "sisRotina": sorted(business.SISTEMAS_ROTINA),
     })
 
 
