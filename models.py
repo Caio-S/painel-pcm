@@ -121,6 +121,9 @@ class OsDetalhe(db.Model):
     detalhe = db.Column(db.Text, default="")
     prev_lib = db.Column(db.DateTime)
     cobrado = db.Column(db.DateTime)
+    # sobrescrita manual da classificação — aposentada: a classificação sai do motor
+    # e se corrige por termo na tela de Classificação, que vale pra todas as O.S.
+    # As colunas ficam (estão vazias) só pra não precisar de migração destrutiva.
     sis_ov = db.Column(db.String(120), default="")
     prob_ov = db.Column(db.String(120), default="")
 
@@ -154,8 +157,6 @@ class OsDetalhe(db.Model):
             "detalhe": self.detalhe or "",
             "prevLib": _iso(self.prev_lib),
             "cobrado": _iso(self.cobrado),
-            "sisOv": self.sis_ov or "",
-            "probOv": self.prob_ov or "",
             "item": {
                 "peca": self.item_peca or "", "sol": self.item_sol or "",
                 "solData": _d(self.item_sol_data), "ped": self.item_ped or "",

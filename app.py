@@ -205,12 +205,7 @@ def api_os_list():
         d = detalhes_por_os.get(o.os)
         det_dict = d.to_dict() if d else _vazio_detalhe_dict(o.os)
         itens = business.classificar_itens(o.prob, o.esp, regras)
-        if det_dict["sisOv"] and det_dict["probOv"]:
-            # correção manual do PCM manda: vira o único problema da O.S.
-            sis, prob = det_dict["sisOv"], det_dict["probOv"]
-            itens = [{"x": o.prob, "s": sis, "p": prob}]
-        else:
-            sis, prob = business.classificar_principal(o.prob, o.esp, regras)
+        sis, prob = business.classificar_principal(o.prob, o.esp, regras)
 
         eventos_por_frota.setdefault(o.veic, []).append({
             "os": o.os, "veic": o.veic, "d": o.ab, "t": 0, "s": sis, "p": prob, "x": o.prob,
@@ -323,10 +318,6 @@ def api_os_patch(os_num):
         d.detalhe = payload["detalhe"] or ""
     if "prevLib" in payload:
         d.prev_lib = datetime.fromisoformat(payload["prevLib"]) if payload["prevLib"] else None
-    if "sisOv" in payload:
-        d.sis_ov = payload["sisOv"] or ""
-    if "probOv" in payload:
-        d.prob_ov = payload["probOv"] or ""
 
     item = payload.get("item") or {}
     if "peca" in item: d.item_peca = item["peca"] or ""
@@ -565,14 +556,9 @@ def _historico_e_abertas_para_classificacao():
         for h in hist_rows
     ]
     regras = _regras_customizadas()
-    detalhes = {d.os: d for d in OsDetalhe.query.all()}
     abertas = []
     for o in OsAberta.query.all():
-        d = detalhes.get(o.os)
-        if d and d.sis_ov and d.prob_ov:
-            sis = d.sis_ov
-        else:
-            sis, _ = business.classificar_principal(o.prob, o.esp, regras)
+        sis, _ = business.classificar_principal(o.prob, o.esp, regras)
         abertas.append({"prob": o.prob, "veic": o.veic, "sisC": sis, "esp": o.esp})
     return historico, abertas
 

@@ -236,17 +236,14 @@ function abrir(os) {
   </div>` : ""}
 
   <div class="fs"><h4>Classificação do problema (usada na reincidência)</h4>
-    ${itens(o).length > 1 ? `<ul class="itens-os">${itens(o).map(i => {
+    <ul class="itens-os">${itens(o).map(i => {
       const re = ((o.reinc && o.reinc.pares) || []).some(x => x.s === i.s && x.p === i.p);
-      return `<li${re ? ' class="re"' : ""}><b>${esc(i.s)} · ${esc(i.p)}</b>${re ? " — reincidiu" : ""}<em>${esc(i.x || "")}</em></li>`;
+      return `<li${re ? ' class="re"' : ""}><b>${esc(i.s)} · ${esc(i.p)}</b>${re ? " — reincidiu" : ""}${i.x ? `<em>${esc(i.x)}</em>` : ""}</li>`;
     }).join("")}</ul>
-    <p class="hint">A descrição lançou ${itens(o).length} problemas; todos entram na reincidência.
-      Os campos abaixo trocam a classificação da O.S. inteira por um problema só.</p>` : ""}
-    <div class="row">
-      <div class="f"><label>Sistema</label><select id="fSis">${CONSTS.sisLista.map(x => `<option ${o.sisC === x ? "selected" : ""}>${x}</option>`).join("")}</select></div>
-      <div class="f"><label>Problema</label><select id="fProb"></select></div>
-    </div>
-    <p class="hint">Sugestão automática a partir do texto da O.S. Corrija se estiver errada.</p>
+    <p class="hint">${itens(o).length > 1
+      ? `A descrição lançou ${itens(o).length} problemas; todos entram na reincidência.`
+      : "Classificação automática a partir do texto da O.S."}
+      Para corrigir a leitura do texto, cadastre um termo em <b>Classificação</b> — vale para todas as O.S.</p>
   </div>
 
   <div class="fs"><h4>Alocação do equipamento</h4>
@@ -307,9 +304,6 @@ function abrir(os) {
   });
   const selAcao = document.getElementById("fAcao");
   if (selAcao) selAcao.onchange = () => { boxOutra.style.display = selAcao.value === "__outra" ? "block" : "none" };
-  const fs = document.getElementById("fSis"), fp = document.getElementById("fProb");
-  const encheProb = () => { fp.innerHTML = (CONSTS.probLista[fs.value] || ["Outros"]).map(x => `<option ${o.probC === x ? "selected" : ""}>${x}</option>`).join("") };
-  fs.onchange = encheProb; encheProb();
   const add = document.getElementById("btnAddRet");
   if (add) add.onclick = async () => {
     const t = document.getElementById("fNovo").value.trim();
@@ -326,16 +320,11 @@ function abrir(os) {
 }
 
 async function salvarModal() {
-  const o = achar(abertaId);
   const sel = mBody.querySelector("#picks .pick.on");
-  const sisSel = v("fSis"), probSel = v("fProb");
-  let sisOv = "", probOv = "";
-  if (sisSel !== o.sisC || probSel !== o.probC) { sisOv = sisSel; probOv = probSel }
   let acao = v("fAcao"); if (acao === "__outra") acao = v("fAcaoTxt");
   const payload = {
     classe: sel ? sel.dataset.k : "NAO", resp: v("fResp"), detalhe: v("fDetalhe"),
     prevLib: v("fPrevLib") ? new Date(v("fPrevLib")).toISOString() : "",
-    sisOv, probOv,
     item: { peca: v("fPeca"), sol: v("fSol"), solData: v("fSolD"), ped: v("fPed"), pedData: v("fPedD"), acao, acaoResp: v("fAcaoResp"), fornec: v("fForn"), previsao: v("fPrev") },
     mo: { mecanico: v("fMec"), causa: v("fCausa") },
     aloc: { ativ: v("fAtiv"), fr: v("fFr"), resp: v("fRespFr"), loc: "" },
