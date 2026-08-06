@@ -356,6 +356,26 @@ async function nova() {
 }
 
 /* ============ histórico da frota ============ */
+/* o back-end já manda a reincidência no topo; aqui só marca onde ela acaba */
+function linhasHistorico(hist) {
+  const re = hist.filter(h => h.re), resto = hist.filter(h => !h.re);
+  // na parte de cima mostra o problema que REPETIU, não o principal da O.S. —
+  // senão uma O.S. que voltou pelo motor aparecia rotulada como "preventiva",
+  // que é só o primeiro item da descrição.
+  const cel = h => h.re
+    ? h.re.map(p => `<b>${esc(p.s)}</b><br><span style="font-size:10.5px;color:var(--ink2)">${esc(p.p)}</span>`).join("<br>")
+    : `${esc(h.s) || "—"}<br><span style="font-size:10.5px;color:var(--ink2)">${esc(h.p) || ""}</span>`;
+  const linha = h => `<tr${h.re ? ' class="h-re"' : ""}><td class="n">${fmt(h.d)}</td>
+    <td>${cel(h)}</td>
+    <td class="n">${h.t ? h.t.toFixed(1) + "h" : "—"}</td>
+    <td style="font-size:11.5px">${esc((h.x || "").slice(0, 140))}</td></tr>`;
+  const div = (txt, cls) => `<tr class="h-div ${cls}"><td colspan="4">${txt}</td></tr>`;
+  if (!re.length) return hist.map(linha).join("");
+  return div(`${re.length} O.S. que repetiram problema em ${CONFIG.reincDias} dias`, "re")
+    + re.map(linha).join("")
+    + (resto.length ? div(`demais ${resto.length} O.S. do histórico`, "") + resto.map(linha).join("") : "");
+}
+
 async function abrirHistoricoFrota(veic) {
   let dados;
   try { dados = await api(`/frota/${encodeURIComponent(veic)}/historico`); }
@@ -376,8 +396,7 @@ async function abrirHistoricoFrota(veic) {
       <ul class="tl">${abertas.map(o => `<li><time>${fmt(o.ab)}</time><p>${esc(o.prob) || "—"}</p></li>`).join("")}</ul></div>` : ""}
     <div class="fs" style="padding:0;overflow:auto;max-height:44vh">
       <table class="ct"><tr><th style="width:15%">Data</th><th style="width:24%">Sistema / Problema</th><th style="width:9%">Horas</th><th>Relato</th></tr>
-      ${hist.map(h => `<tr><td class="n">${fmt(h.d)}</td><td>${esc(h.s) || "—"}<br><span style="font-size:10.5px;color:var(--ink2)">${esc(h.p) || ""}</span></td>
-        <td class="n">${h.t ? h.t.toFixed(1) + "h" : "—"}</td><td style="font-size:11.5px">${esc((h.x || "").slice(0, 140))}</td></tr>`).join("")}
+      ${linhasHistorico(hist)}
       </table>
       ${hist.length ? "" : `<p style="padding:20px;text-align:center;color:var(--ink2)">Nenhum histórico carregado para esta frota ainda.</p>`}
     </div>`;

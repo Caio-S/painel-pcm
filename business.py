@@ -428,6 +428,29 @@ def cobertura(historico, abertas):
     return {"tot": tot, "nc": nc, "pc": pc}
 
 
+def repeticoes(historico, janela_dias):
+    """Quais O.S. do histórico repetem um problema já visto na mesma frota dentro
+    da janela, e quais problemas foram esses. Mesma regra do retrabalho — serve pra
+    listar a reincidência antes do resto do histórico na ficha da frota."""
+    lim = timedelta(days=janela_dias)
+    por_frota = {}
+    for h in historico:
+        por_frota.setdefault(h["veic"], []).append(h)
+
+    marcadas = {}
+    for arr in por_frota.values():
+        arr = sorted(arr, key=lambda h: h["d"])
+        for i, h in enumerate(arr):
+            meus = pares(h)
+            comuns = set()
+            for x in arr[:i]:
+                if (h["d"] - x["d"]) <= lim:
+                    comuns |= meus & pares(x)
+            if comuns:
+                marcadas[h["os"]] = [{"s": s, "p": p} for s, p in sorted(comuns)]
+    return marcadas
+
+
 def calcular_retrabalho(historico, janela_dias):
     """historico: lista de dicts {veic, d, t, s, p, itens} — só O.S. encerradas."""
     lim = timedelta(days=janela_dias)

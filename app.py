@@ -471,18 +471,32 @@ def api_frota_historico(codigo):
     abertas = OsAberta.query.filter_by(veic=codigo).order_by(OsAberta.ab.desc()).all()
     cfg = _config()
     historico_dicts = [
-        {"veic": h.veic, "d": h.data_abertura, "t": h.horas_parada or 0,
+        {"os": h.os, "veic": h.veic, "d": h.data_abertura, "t": h.horas_parada or 0,
          "s": h.sistema, "p": h.problema, "itens": h.lista_itens()}
         for h in hist
     ]
     rt = business.calcular_retrabalho(historico_dicts, cfg["reincDias"])
+
+    # a reincidência vem primeiro, e só depois o resto do histórico: é o que o PCM
+    # abre a ficha pra ver. O corte de 200 linhas é aplicado depois de ordenar,
+    # senão uma repetição antiga ficava de fora da lista.
+    repet = business.repeticoes(historico_dicts, cfg["reincDias"])
+    linhas = []
+    for h in hist:
+        d = h.to_dict()
+        d["re"] = repet.get(h.os)
+        linhas.append(d)
+    linhas.sort(key=lambda d: d["d"] or "", reverse=True)   # mais recente primeiro
+    linhas.sort(key=lambda d: d["re"] is None)              # e a reincidência no topo
+
     return jsonify({
         "codigo": codigo,
         "frota": f.to_dict() if f else None,
         "aloc": _aloc_dict(codigo),
         "retrabalho": rt.get(codigo),
+        "reincidentes": len(repet),
         "abertas": [o.to_dict() for o in abertas],
-        "historico": [h.to_dict() for h in hist[:200]],
+        "historico": linhas[:200],
     })
 
 
