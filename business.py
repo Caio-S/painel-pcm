@@ -224,6 +224,12 @@ REGRAS = [
 SEM_CLASSIFICACAO = "Outros / Não Classificado"
 # manutenção programada: entra na oficina por plano, não por falha. Repetir é o
 # esperado, então fica fora da reincidência e do retrabalho.
+#
+# O tipo da O.S. manda mais que o texto: uma preventiva descrita como
+# "LAVAGEM / PREVENTIVA / TROCA DE OLEO" classifica em Motor pelo item da troca
+# de óleo e passava a contar como falha do motor que voltou. Só corretiva
+# reincide.
+TIPOS_PROGRAMADOS = {"PREVENTIVA", "PREDITIVA", "REFORMA"}
 SISTEMAS_PROGRAMADOS = {"Lavagem / Preventiva / Pit Stop", "Reforma"}
 
 
@@ -347,9 +353,13 @@ def pares(evento):
     Serviço programado fica de fora: lavagem, lubrificação, preventiva e reforma
     entram na oficina por plano, então repetir é o esperado — contá-las como
     reincidência enchia o painel de "85ª ocorrência" que ninguém tem o que cobrar.
+    Vale pelo tipo da O.S. (só corretiva reincide) e também pelo sistema, pra
+    pegar o item de rotina lançado dentro de uma corretiva.
 
     Trecho não classificado só conta quando é o único: senão ele casaria com
     qualquer outra O.S. não classificada da frota e inventaria reincidência."""
+    if (evento.get("m") or "").strip().upper() in TIPOS_PROGRAMADOS:
+        return set()
     itens = evento.get("itens")
     if not itens:
         par = (evento.get("s"), evento.get("p"))

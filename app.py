@@ -215,7 +215,7 @@ def api_os_list():
     hist_rows = db.session.query(
         OsHistorico.os, OsHistorico.veic, OsHistorico.data_abertura,
         OsHistorico.horas_parada, OsHistorico.sistema, OsHistorico.problema,
-        OsHistorico.texto, OsHistorico.itens,
+        OsHistorico.texto, OsHistorico.itens, OsHistorico.tipo_manutencao,
     ).filter(OsHistorico.veic.in_(veics)).all() if veics else []
 
     def _itens_hist(h):
@@ -226,7 +226,7 @@ def api_os_list():
         eventos_por_frota.setdefault(h.veic, []).append({
             "os": h.os, "veic": h.veic, "d": h.data_abertura,
             "t": h.horas_parada or 0, "s": h.sistema, "p": h.problema, "x": h.texto,
-            "itens": _itens_hist(h),
+            "itens": _itens_hist(h), "m": h.tipo_manutencao,
         })
     frotas_com_historico = {h.veic for h in hist_rows}
 
@@ -240,7 +240,7 @@ def api_os_list():
 
         eventos_por_frota.setdefault(o.veic, []).append({
             "os": o.os, "veic": o.veic, "d": o.ab, "t": 0, "s": sis, "p": prob, "x": o.prob,
-            "itens": itens,
+            "itens": itens, "m": o.mt,
         })
 
         a = aloc_por_frota.get(o.veic)
@@ -263,7 +263,7 @@ def api_os_list():
     for item in resultado:
         evento = {
             "os": item["os"], "veic": item["veic"], "d": item["_ab_dt"],
-            "s": item["sisC"], "p": item["probC"], "itens": item["itensC"],
+            "s": item["sisC"], "p": item["probC"], "itens": item["itensC"], "m": item["mt"],
         }
         r = business.calcular_reincidencia(evento, eventos_por_frota, cfg["reincDias"])
         item["reinc"] = None
@@ -276,7 +276,8 @@ def api_os_list():
 
     retrabalho = business.calcular_retrabalho(
         [{"veic": h.veic, "d": h.data_abertura, "t": h.horas_parada or 0,
-          "s": h.sistema, "p": h.problema, "itens": _itens_hist(h)} for h in hist_rows],
+          "s": h.sistema, "p": h.problema, "itens": _itens_hist(h),
+          "m": h.tipo_manutencao} for h in hist_rows],
         cfg["reincDias"],
     )
     for item in resultado:
@@ -439,7 +440,7 @@ def api_frota_historico(codigo):
     cfg = _config()
     historico_dicts = [
         {"os": h.os, "veic": h.veic, "d": h.data_abertura, "t": h.horas_parada or 0,
-         "s": h.sistema, "p": h.problema, "itens": h.lista_itens()}
+         "s": h.sistema, "p": h.problema, "itens": h.lista_itens(), "m": h.tipo_manutencao}
         for h in hist
     ]
     rt = business.calcular_retrabalho(historico_dicts, cfg["reincDias"])
@@ -448,13 +449,32 @@ def api_frota_historico(codigo):
     # abre a ficha pra ver. O corte de 200 linhas é aplicado depois de ordenar,
     # senão uma repetição antiga ficava de fora da lista.
     repet = business.repeticoes(historico_dicts, cfg["reincDias"])
+
+    # e antes de tudo o que se liga à O.S. aberta agora: é a pergunta que traz o
+    # PCM aqui — "isso que quebrou hoje já tinha quebrado?".
+    regras = _regras_customizadas()
+    pares_abertas = set()
+    for o in abertas:
+        pares_abertas |= business.pares({
+            "itens": business.classificar_itens(o.prob, o.esp, regras), "m": o.mt,
+        })
+
     linhas = []
-    for h in hist:
+    for h, hd in zip(hist, historico_dicts):
         d = h.to_dict()
         d["re"] = repet.get(h.os)
+        ligados = business.pares(hd) & pares_abertas
+        d["reAberta"] = [{"s": s, "p": p} for s, p in sorted(ligados)] or None
         linhas.append(d)
+
+    # três blocos, cada um em ordem de data. O rank precisa ser um número só: com
+    # uma tupla (ligada, repetida) o bloco das ligadas se subdividia, e a mais
+    # recente caía no meio da lista por não ser repetição dentro da janela.
+    def _bloco(d):
+        return 0 if d["reAberta"] else 1 if d["re"] else 2
+
     linhas.sort(key=lambda d: d["d"] or "", reverse=True)   # mais recente primeiro
-    linhas.sort(key=lambda d: d["re"] is None)              # e a reincidência no topo
+    linhas.sort(key=_bloco)
 
     return jsonify({
         "codigo": codigo,

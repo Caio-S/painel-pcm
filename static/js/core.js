@@ -350,15 +350,17 @@ function dias(h) { return h ? (h / 24).toLocaleString("pt-BR", { minimumFraction
 
 /* o back-end já manda a reincidência no topo; aqui só marca onde ela acaba */
 function linhasHistorico(hist) {
-  const re = hist.filter(h => h.re), resto = hist.filter(h => !h.re);
+  const liga = hist.filter(h => h.reAberta);
+  const re = hist.filter(h => !h.reAberta && h.re);
+  const resto = hist.filter(h => !h.reAberta && !h.re);
   // na parte de cima mostra o problema que REPETIU, não o principal da O.S. —
   // senão uma O.S. que voltou pelo motor aparecia rotulada como "preventiva",
   // que é só o primeiro item da descrição.
-  const cel = h => h.re
-    ? h.re.map(p => `<b>${esc(p.s)}</b><br><span style="font-size:10.5px;color:var(--ink2)">${esc(p.p)}</span>`).join("<br>")
+  const cel = h => (h.reAberta || h.re)
+    ? (h.reAberta || h.re).map(p => `<b>${esc(p.s)}</b><br><span style="font-size:10.5px;color:var(--ink2)">${esc(p.p)}</span>`).join("<br>")
     : `${esc(h.s) || "—"}<br><span style="font-size:10.5px;color:var(--ink2)">${esc(h.p) || ""}</span>`;
   const tipo = m => m ? `<span class="tp-${esc(m).toLowerCase()}">${esc(m)}</span>` : "—";
-  const linha = h => `<tr${h.re ? ' class="h-re"' : ""}>
+  const linha = h => `<tr class="${h.reAberta ? "h-liga" : h.re ? "h-re" : ""}">
     <td class="n">${esc(h.os)}</td>
     <td class="n">${fmt(h.d)}</td>
     <td class="n">${h.lib ? fmt(h.lib) : "em aberto"}</td>
@@ -368,9 +370,9 @@ function linhasHistorico(hist) {
     <td>${cel(h)}</td>
     <td style="font-size:11.5px">${esc((h.x || "").slice(0, 140))}</td></tr>`;
   const div = (txt, cls) => `<tr class="h-div ${cls}"><td colspan="8">${txt}</td></tr>`;
-  if (!re.length) return hist.map(linha).join("");
-  return div(`${re.length} O.S. que repetiram problema em ${CONFIG.reincDias} dias`, "re")
-    + re.map(linha).join("")
+  if (!liga.length && !re.length) return hist.map(linha).join("");
+  return (liga.length ? div(`${liga.length} O.S. com o mesmo problema da O.S. aberta agora`, "liga") + liga.map(linha).join("") : "")
+    + (re.length ? div(`outras ${re.length} O.S. que repetiram problema em ${CONFIG.reincDias} dias`, "re") + re.map(linha).join("") : "")
     + (resto.length ? div(`demais ${resto.length} O.S. do histórico`, "") + resto.map(linha).join("") : "");
 }
 

@@ -118,6 +118,10 @@ main{max-width:1660px;margin:0 auto;padding:16px 20px 60px}
   letter-spacing:.08em;text-transform:uppercase;padding:5px 9px;position:sticky;top:0}
 .ct tr.h-div.re td{background:var(--red-bg);color:var(--red)}
 .ct tr.h-re td:first-child{box-shadow:inset 3px 0 0 var(--red)}
+/* o que se liga à O.S. aberta agora — o motivo de o PCM abrir a ficha */
+.ct tr.h-div.liga td{background:var(--navy);color:#fff}
+.ct tr.h-liga td{background:#FFF6F5}
+.ct tr.h-liga td:first-child{box-shadow:inset 3px 0 0 var(--navy)}
 .os-clock{padding:9px 13px;background:#F7F9FB;border-top:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;gap:14px;align-items:center}
 .tempo{font-family:var(--mono);font-size:20px;font-weight:700;line-height:1;white-space:nowrap}
 .tempo small{display:block;font-family:var(--sans);font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink2);font-weight:700;margin-top:5px}
