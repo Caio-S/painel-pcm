@@ -137,6 +137,20 @@ def api_sync_info():
     return jsonify(sync.get_sync_info())
 
 
+@app.route("/api/sync/limpar-rodando", methods=["POST"])
+def api_sync_limpar_rodando():
+    """Uso único (chamado à mão): dispara em background a remoção do histórico já
+    sincronizado com situação 'Rodando' — ver sync.disparar_purga_historico_rodando.
+    Acompanhar por GET /api/sync/limpar-rodando/status."""
+    sync.disparar_purga_historico_rodando(app)
+    return jsonify({"status": "processando"}), 202
+
+
+@app.route("/api/sync/limpar-rodando/status")
+def api_sync_limpar_rodando_status():
+    return jsonify(sync.get_status_purga())
+
+
 # =============== configuração / constantes ===============
 
 DEFAULT_SLA = 3

@@ -151,9 +151,11 @@ def fetch_frota():
 
 
 def fetch_os_historico(desde):
-    """O.S. encerradas com data_hora_liberacao > desde (sync incremental). Sem
-    filtro de status: qualquer O.S. já liberada entra no histórico, independente
-    de status atual (a view não reabre O.S. liberada)."""
+    """O.S. encerradas com data_hora_liberacao > desde (sync incremental).
+
+    Exclui codigo_situacao_veiculo = 'R' (Rodando): confirmado pelo usuário que são
+    lançamentos automáticos do CHB, não paradas reais da frota, e não devem entrar
+    no histórico nem contar pra reincidência/retrabalho."""
     empresas = _empresas()
     conn = _conn()
     try:
@@ -166,6 +168,7 @@ def fetch_os_historico(desde):
                 WHERE id_empresa IN ({_in_clause(empresas)})
                   AND data_hora_liberacao IS NOT NULL
                   AND data_hora_liberacao > %s
+                  AND codigo_situacao_veiculo = 'P'
                 ORDER BY data_hora_liberacao
                 """,
                 empresas + [desde],
@@ -190,3 +193,33 @@ def fetch_os_historico(desde):
             "tipo_manutencao": (r.get("descricao_tipo_manutencao") or "").strip().upper(),
         })
     return out
+
+
+def fetch_situacao_por_os_veic(pares):
+    """Situação (P/R) de um lote de O.S. já conhecidas, casando por (documento, frota) —
+    documento sozinho não é chave confiável (o mesmo número se repete pra frotas
+    diferentes ao longo dos anos nesta view). Usado só pra limpar do histórico local
+    o que foi sincronizado antes do filtro de situacao='P' existir (ver
+    fetch_os_historico) — pares: lista de tuplas (os, veic) como string."""
+    if not pares:
+        return {}
+    empresas = _empresas()
+    conn = _conn()
+    try:
+        with conn.cursor() as cur:
+            tuple_ph = ",".join(["(%s,%s)"] * len(pares))
+            flat = [v for p in pares for v in p]
+            cur.execute(
+                f"""
+                SELECT documento, codigo_frota, codigo_situacao_veiculo
+                FROM vw_ordem_servico_frota
+                WHERE id_empresa IN ({_in_clause(empresas)}) AND (documento, codigo_frota) IN ({tuple_ph})
+                """,
+                empresas + flat,
+            )
+            return {
+                (str(r["documento"]), str(r["codigo_frota"])): r["codigo_situacao_veiculo"]
+                for r in cur.fetchall()
+            }
+    finally:
+        conn.close()

@@ -105,6 +105,57 @@ def _classificar(texto, esp, regras):
     return sis, prob, json.dumps([[i["s"], i["p"]] for i in itens], ensure_ascii=False)
 
 
+_status_purga = {"status": "idle"}
+
+
+def get_status_purga():
+    return dict(_status_purga)
+
+
+def _purgar_historico_rodando(app):
+    """Remove do histórico já sincronizado as O.S. com situação 'Rodando' (lançamento
+    automático do CHB, não parada real — ver fetch_os_historico). Sincronizações
+    incrementais futuras já saem filtradas; isso só limpa o que ficou salvo antes do
+    filtro existir. Casa por (os, veic), não só os, porque o número da O.S. sozinho
+    não é chave confiável nesta view (se repete pra frotas diferentes).
+
+    Roda em thread + commit por lote (não uma transação só): o histórico pode ter
+    dezenas de milhares de linhas, e consultar o MySQL em lotes de 500 pra cada uma
+    passa longe do timeout de proxy de ~30s do Render se fosse síncrono."""
+    with app.app_context():
+        try:
+            pares = [
+                (row.os, row.veic)
+                for row in OsHistorico.query.with_entities(OsHistorico.os, OsHistorico.veic).all()
+            ]
+            total_lotes = max(1, (len(pares) + LOTE - 1) // LOTE)
+            removidos = 0
+            for i, inicio in enumerate(range(0, len(pares), LOTE)):
+                lote = pares[inicio:inicio + LOTE]
+                situacao = mariadb_client.fetch_situacao_por_os_veic(lote)
+                os_remover = [os_num for (os_num, veic) in lote if situacao.get((os_num, veic)) == "R"]
+                if os_remover:
+                    removidos += (
+                        OsHistorico.query.filter(OsHistorico.os.in_(os_remover))
+                        .delete(synchronize_session=False)
+                    )
+                db.session.commit()
+                _status_purga.clear()
+                _status_purga.update(status="processando", lote=i + 1, total_lotes=total_lotes, removidos=removidos)
+            _status_purga.clear()
+            _status_purga.update(status="concluido", removidos=removidos, total=len(pares))
+        except Exception as exc:
+            db.session.rollback()
+            _status_purga.clear()
+            _status_purga.update(status="erro", mensagem=str(exc))
+
+
+def disparar_purga_historico_rodando(app):
+    _status_purga.clear()
+    _status_purga.update(status="processando", lote=0, total_lotes=0, removidos=0)
+    threading.Thread(target=_purgar_historico_rodando, args=(app,), daemon=True).start()
+
+
 def reclassificar_historico():
     """Recalcula sistema/problema de todo o histórico — chamado quando uma regra
     customizada nova é criada/removida na tela de Classificação (as ~60 regras fixas
