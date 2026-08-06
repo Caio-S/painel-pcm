@@ -73,7 +73,7 @@ function destRender() {
   });
   cobDest.querySelectorAll("[data-zap]").forEach(b => b.onclick = () => abrirZap(b.dataset.zap));
   const n = cobDestinos.filter(x => x.marcado).length, semTel = cobDestinos.filter(x => x.marcado && !x.tels.length).length;
-  cZap.textContent = "Enviar no WhatsApp (" + cobDestinos.filter(x => x.marcado && x.tels.length).length + ")";
+  prepararFilaZap();
   cobSub.textContent = "Frota " + o.veic + " · O.S. " + o.os + " · " + n + " destinatário(s)" + (semTel ? " · " + semTel + " sem número" : "");
 }
 function abrirZap(tel) { window.open("https://wa.me/" + tel + "?text=" + encodeURIComponent(txtCob.value), "_blank") }
@@ -98,12 +98,35 @@ function copiarCobranca() {
 cX.onclick = () => maskCob.classList.remove("on");
 maskCob.onclick = e => { if (e.target === maskCob) maskCob.classList.remove("on") };
 cCopiar.onclick = copiarCobranca;
+/* O navegador só deixa abrir 1 popup automático por clique — chamar window.open()
+   várias vezes seguidas num loop só (o que fazia antes) tinha a primeira aberta e
+   as outras bloqueadas silenciosamente, sem nenhuma API paga do WhatsApp pra
+   contornar isso. Fila sequencial: cada clique no botão abre o próximo
+   destinatário, um clique por vez — cada clique é um gesto novo do usuário, então
+   nunca é bloqueado. */
+let cZapFila = [], cZapIdx = 0;
+function prepararFilaZap() {
+  cZapFila = cobDestinos.filter(x => x.marcado && x.tels.length);
+  cZapIdx = 0;
+  atualizarBotaoZap();
+}
+function atualizarBotaoZap() {
+  if (!cZapFila.length) { cZap.textContent = "Enviar no WhatsApp (0)"; return }
+  if (cZapIdx >= cZapFila.length) { cZap.textContent = "Reenviar a todos (" + cZapFila.length + ")"; return }
+  cZap.textContent = cZapFila.length > 1
+    ? "Enviar no WhatsApp — próximo: " + cZapFila[cZapIdx].nome + " (" + (cZapIdx + 1) + "/" + cZapFila.length + ")"
+    : "Enviar no WhatsApp (1)";
+}
 cZap.onclick = () => {
-  const alvos = cobDestinos.filter(x => x.marcado && x.tels.length);
-  if (!alvos.length) { window.open("https://wa.me/?text=" + encodeURIComponent(txtCob.value), "_blank"); aviso("Nenhum destinatário com número — abri o WhatsApp para escolher o contato."); return }
-  let ok = 0;
-  alvos.forEach(x => { const w = window.open("https://wa.me/" + x.tels[0] + "?text=" + encodeURIComponent(txtCob.value), "_blank"); if (w) ok++ });
-  aviso(ok === alvos.length ? ok + " conversa(s) aberta(s) no WhatsApp." : "O navegador bloqueou parte das janelas — use os botões WhatsApp de cada destinatário.");
+  if (!cZapFila.length) { window.open("https://wa.me/?text=" + encodeURIComponent(txtCob.value), "_blank"); aviso("Nenhum destinatário com número — abri o WhatsApp para escolher o contato."); return }
+  if (cZapIdx >= cZapFila.length) cZapIdx = 0;
+  const x = cZapFila[cZapIdx];
+  window.open("https://wa.me/" + x.tels[0] + "?text=" + encodeURIComponent(txtCob.value), "_blank");
+  cZapIdx++;
+  atualizarBotaoZap();
+  aviso(cZapIdx < cZapFila.length
+    ? "Aberto pra " + x.nome + " — clique de novo pra abrir o próximo (" + cZapIdx + "/" + cZapFila.length + ")."
+    : "Aberto pra " + x.nome + " — todos os " + cZapFila.length + " destinatários já foram abertos.");
 };
 cMail.onclick = () => {
   const o = achar(cobOS);
