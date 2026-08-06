@@ -59,12 +59,15 @@ function carimbaAgora(idNumero, idData) {
 }
 function ultRet(o) { return (o.retornos && o.retornos.length) ? new Date(o.retornos.map(r => r.em).sort().slice(-1)[0]) : new Date(o.ab); }
 function semRet(o) { return agora() - ultRet(o); }
-function temPrevisao(o) { return o.classe === "MATERIAL" && !!(o.item && o.item.previsao) }
+// duas previsões possíveis: liberação do equipamento (prevLib, qualquer classe —
+// preenchida em Detalhar pendência) ou chegada da peça (item.previsao, só MATERIAL).
+// Qualquer uma das duas presente já substitui o SLA de horas.
+function temPrevisao(o) { return !!o.prevLib || (o.classe === "MATERIAL" && !!(o.item && o.item.previsao)) }
+function previsaoLabel(o) { return o.prevLib ? fmt(o.prevLib) : fmtd(o.item.previsao) }
 function vencida(o) {
   if (!o.aberta) return false;
-  // com previsão de entrega de material cadastrada, a tag vira "Previsão: dd/mm"
-  // em vez de "retorno vencido" — cobrar retorno antes da peça chegar não faz
-  // sentido, e a previsão já é o compromisso que substitui o SLA de horas.
+  // com previsão cadastrada, a tag vira "Previsão: dd/mm" em vez de "retorno
+  // vencido" — cobrar retorno antes do prazo combinado não faz sentido.
   if (temPrevisao(o)) return false;
   return horas(semRet(o)) >= CONFIG.sla;
 }
@@ -173,7 +176,7 @@ function card(o) {
     <button class="frota clickable" data-frota-hist="${o.veic}">${o.veic}<span>${esc(o.mod || o.esp)}</span></button>
     <div class="os-meta">
       <div class="tags">${rc ? `<span class="tag reinc flash">${rc.n}ª vez · ${rc.voltaEm}d</span>` : ""}<span class="tag tagfr">${esc(o.frente)}</span><span class="tag ${c.cls}">${c.lbl}</span>
-        ${vencida(o) ? '<span class="tag diag flash">retorno vencido</span>' : temPrevisao(o) ? `<span class="tag prev">Previsão: ${fmtd(o.item.previsao)}</span>` : ''}</div>
+        ${vencida(o) ? '<span class="tag diag flash">retorno vencido</span>' : temPrevisao(o) ? `<span class="tag prev">Previsão: ${previsaoLabel(o)}</span>` : ''}</div>
       <div class="veic">${esc(o.desc)} · ${esc(o.esp)} · O.S. ${o.os} · ${esc(o.ofic)}</div>
       <div class="motivo">${esc(o.prob) || "—"}</div>
       ${chipsProblemas(o)}
