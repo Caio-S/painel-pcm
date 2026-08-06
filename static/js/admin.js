@@ -29,19 +29,17 @@ async function alocRender() {
        <input id="aBAtiv" placeholder="Atividade" list="dlAtiv" style="width:150px">
        <input id="aBFr" placeholder="Frente" list="dlFr" style="width:90px">
        <input id="aBResp" placeholder="Responsável da frente" list="dlResp" style="width:160px">
-       <input id="aBLoc" placeholder="Local/código" list="dlLoc" style="width:105px">
        <button class="btn btn-dark" id="aAplicar">Aplicar</button>
        <button class="btn btn-line" id="aLimpar">Limpar alocação dos listados</button>
      </div>
    </div>
    <div class="fs" style="padding:0;overflow:auto;max-height:46vh">
      <table class="al"><tr><th style="width:80px">Frota</th><th>Modelo</th><th>Especialidade</th>
-       <th style="width:150px">Atividade</th><th style="width:90px">Frente</th><th style="width:100px">Local</th><th style="width:160px">Responsável da frente</th></tr>
+       <th style="width:150px">Atividade</th><th style="width:90px">Frente</th><th style="width:160px">Responsável da frente</th></tr>
      ${arr.map(f => `<tr class="${f.aloc.ativ || f.aloc.fr ? 'tem' : ''}">
        <td class="f">${f.c}</td><td>${esc(f.m)}</td><td style="color:var(--ink2)">${esc(f.e)}</td>
        <td><input data-c="${f.c}" data-k="ativ" list="dlAtiv" value="${esc(f.aloc.ativ)}"></td>
        <td><input data-c="${f.c}" data-k="fr" list="dlFr" value="${esc(f.aloc.fr)}"></td>
-       <td><input data-c="${f.c}" data-k="loc" list="dlLoc" value="${esc(f.aloc.loc)}"></td>
        <td><input data-c="${f.c}" data-k="resp" list="dlResp" value="${esc(f.aloc.resp)}"></td></tr>`).join("")}
      </table></div>`;
   aInfo.textContent = (total > 300 ? "mostrando 300 de " + total + " frotas — refine o filtro" : total + " frota(s) listada(s)");
@@ -49,6 +47,8 @@ async function alocRender() {
   aBody.querySelectorAll("table.al input").forEach(inp => inp.onchange = async () => {
     const c = inp.dataset.c, k = inp.dataset.k;
     const f = FROTA_LIST.find(x => x.c === c);
+    // loc continua no payload mesmo sem campo na tela: o PUT grava os quatro
+    // campos de uma vez, então omitir apagaria o local que veio dos relatórios.
     const novo = { ativ: f.aloc.ativ, fr: f.aloc.fr, resp: f.aloc.resp, loc: f.aloc.loc };
     novo[k] = inp.value.trim();
     try {
@@ -61,10 +61,10 @@ async function alocRender() {
   document.getElementById("aSo").onchange = e => { aFiltro.so = e.target.checked; alocRender() };
   document.getElementById("aAplicar").onclick = async () => {
     const at = document.getElementById("aBAtiv").value.trim(), fr = document.getElementById("aBFr").value.trim(),
-      rs = document.getElementById("aBResp").value.trim(), lc = document.getElementById("aBLoc").value.trim();
-    if (!at && !fr && !rs && !lc) { aviso("Preencha atividade, frente, local ou responsável antes de aplicar."); return }
+      rs = document.getElementById("aBResp").value.trim();
+    if (!at && !fr && !rs) { aviso("Preencha atividade, frente ou responsável antes de aplicar."); return }
     try {
-      await api('/frota/alocacao/bulk', { method: "POST", body: JSON.stringify({ codigos: arr.map(f => f.c), ativ: at, fr, resp: rs, loc: lc }) });
+      await api('/frota/alocacao/bulk', { method: "POST", body: JSON.stringify({ codigos: arr.map(f => f.c), ativ: at, fr, resp: rs }) });
       FROTA_LIST = []; await carregarOS(); opcoes(); render(); await alocRender(); aviso(arr.length + " frota(s) atualizada(s).");
     } catch (e) { aviso(e.message) }
   };
