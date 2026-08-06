@@ -75,7 +75,15 @@ main{max-width:1660px;margin:0 auto;padding:16px 20px 60px}
 .sla-set{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2);font-weight:600}
 .sla-set input{width:52px;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:var(--mono)}
 .count{font-size:12px;color:var(--ink2);font-weight:600}
-.gh{display:flex;align-items:baseline;gap:12px;margin:18px 0 9px;padding-bottom:6px;border-bottom:2px solid var(--navy);flex-wrap:wrap}
+/* cabeçalho do grupo é um botão: recolhe pra passar por cima de um grupo grande
+   sem rolar as dezenas de cards dele */
+.gh{display:flex;align-items:baseline;gap:12px;margin:18px 0 9px;padding:0 0 6px;border:0;border-bottom:2px solid var(--navy);
+  flex-wrap:wrap;width:100%;background:none;text-align:left;cursor:pointer;font-family:inherit}
+.gh:hover h2{color:var(--gold-ink,#8A6D0B)}
+.gh-seta{font-size:11px;color:var(--ink2);transition:transform .15s;align-self:center}
+.grupo.fechado .gh-seta{transform:rotate(-90deg)}
+.grupo.fechado .grid{display:none}
+.grupo.fechado .gh{opacity:.75}
 .gh h2{margin:0;font-size:14px;letter-spacing:.1em;text-transform:uppercase}
 .gh em{font-style:normal;font-family:var(--mono);font-size:12px;color:var(--ink2)}
 .gh em b{color:var(--red)}

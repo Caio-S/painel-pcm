@@ -17,6 +17,9 @@ let CONFIG = { sla: 3, reincDias: 30, groupBy: 'frente', tvSeg: 22 };
 let OS_LIST = [];
 let filtro = { alerta: false, semCls: false, reinc: false, semH: false, agr: "", esp: "", mod: "", frente: "", tp: "", classe: "", busca: "" };
 let abertaId = null;
+/* grupos recolhidos — guardados por chave, não por posição: o re-render reordena
+   os grupos pelo número de O.S., então um índice apontaria pro grupo errado */
+let recolhidos = new Set();
 
 /* ============ util ============ */
 const esc = s => String(s == null ? "" : s).replace(/[<>&]/g, c => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
@@ -196,10 +199,20 @@ function render() {
   grupos.innerHTML = l.length ? chaves.map(k => {
     const arr = g[k], venc = arr.filter(vencida).length;
     const hs = Math.round(arr.reduce((s, o) => s + horas(agora() - new Date(o.ab)), 0));
-    return `<div class="gh"><h2>${esc(k)}</h2>
-      <em>${arr.length} O.S.${venc ? ` · <b>${venc} vencida(s)</b>` : ""} · ${hs.toLocaleString("pt-BR")}h paradas</em></div>
-      <div class="grid">${arr.map(card).join("")}</div>`;
+    const aberto = !recolhidos.has(k);
+    return `<section class="grupo${aberto ? "" : " fechado"}">
+      <button class="gh" data-grupo="${encodeURIComponent(k)}" aria-expanded="${aberto}"
+        title="${aberto ? "Recolher" : "Abrir"} este grupo">
+        <span class="gh-seta">▾</span><h2>${esc(k)}</h2>
+        <em>${arr.length} O.S.${venc ? ` · <b>${venc} vencida(s)</b>` : ""} · ${hs.toLocaleString("pt-BR")}h paradas</em>
+      </button>
+      <div class="grid">${arr.map(card).join("")}</div></section>`;
   }).join("") : `<div class="empty">Nenhuma O.S. neste filtro.</div>`;
+  grupos.querySelectorAll("[data-grupo]").forEach(b => b.onclick = () => {
+    const k = decodeURIComponent(b.dataset.grupo);
+    if (recolhidos.has(k)) recolhidos.delete(k); else recolhidos.add(k);
+    render();
+  });
   grupos.querySelectorAll("[data-act]").forEach(b => b.onclick = () => b.dataset.act === "ret" ? retornoRapido(b.dataset.os) : b.dataset.act === "cob" ? cobrar(b.dataset.os) : abrir(b.dataset.os));
   grupos.querySelectorAll("[data-frota-hist]").forEach(b => b.onclick = e => { e.stopPropagation(); abrirHistoricoFrota(b.dataset.frotaHist) });
 }
