@@ -59,12 +59,13 @@ function carimbaAgora(idNumero, idData) {
 }
 function ultRet(o) { return (o.retornos && o.retornos.length) ? new Date(o.retornos.map(r => r.em).sort().slice(-1)[0]) : new Date(o.ab); }
 function semRet(o) { return agora() - ultRet(o); }
+function temPrevisao(o) { return o.classe === "MATERIAL" && !!(o.item && o.item.previsao) }
 function vencida(o) {
   if (!o.aberta) return false;
-  // com previsão de entrega de material registrada, o retorno não conta como vencido
-  // enquanto o prazo previsto ainda não passou — cobrar retorno antes da peça chegar
-  // não faz sentido, mesmo que já tenha passado o SLA normal de horas.
-  if (o.classe === "MATERIAL" && o.item && o.item.previsao && agora() < dataLocal(o.item.previsao)) return false;
+  // com previsão de entrega de material cadastrada, a tag vira "Previsão: dd/mm"
+  // em vez de "retorno vencido" — cobrar retorno antes da peça chegar não faz
+  // sentido, e a previsão já é o compromisso que substitui o SLA de horas.
+  if (temPrevisao(o)) return false;
   return horas(semRet(o)) >= CONFIG.sla;
 }
 let tId; function aviso(m) { toast.textContent = m; toast.classList.add("on"); clearTimeout(tId); tId = setTimeout(() => toast.classList.remove("on"), 2600); }
@@ -172,7 +173,7 @@ function card(o) {
     <button class="frota clickable" data-frota-hist="${o.veic}">${o.veic}<span>${esc(o.mod || o.esp)}</span></button>
     <div class="os-meta">
       <div class="tags">${rc ? `<span class="tag reinc flash">${rc.n}ª vez · ${rc.voltaEm}d</span>` : ""}<span class="tag tagfr">${esc(o.frente)}</span><span class="tag ${c.cls}">${c.lbl}</span>
-        ${vencida(o) ? '<span class="tag diag flash">retorno vencido</span>' : ''}</div>
+        ${vencida(o) ? '<span class="tag diag flash">retorno vencido</span>' : temPrevisao(o) ? `<span class="tag prev">Previsão: ${fmtd(o.item.previsao)}</span>` : ''}</div>
       <div class="veic">${esc(o.desc)} · ${esc(o.esp)} · O.S. ${o.os} · ${esc(o.ofic)}</div>
       <div class="motivo">${esc(o.prob) || "—"}</div>
       ${chipsProblemas(o)}
