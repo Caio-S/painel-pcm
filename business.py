@@ -356,18 +356,23 @@ def pares(evento):
     Vale pelo tipo da O.S. (só corretiva reincide) e também pelo sistema, pra
     pegar o item de rotina lançado dentro de uma corretiva.
 
-    Trecho não classificado só conta quando é o único: senão ele casaria com
-    qualquer outra O.S. não classificada da frota e inventaria reincidência."""
+    Trecho não classificado nunca conta: "não classificado" não é um problema, é
+    a ausência de leitura do texto. Deixá-lo casar fazia duas O.S. sem relação
+    nenhuma — "TRAVOU AS PORTAS" e "MONTAGEM DOS FARÓIS" — virarem a mesma falha
+    repetida. O.S. sem nenhum problema legível simplesmente não reincide, e o
+    caminho pra ela voltar a contar é ensinar o termo na tela de Classificação."""
     if (evento.get("m") or "").strip().upper() in TIPOS_PROGRAMADOS:
         return set()
     itens = evento.get("itens")
     if not itens:
         par = (evento.get("s"), evento.get("p"))
-        return set() if par[0] in SISTEMAS_PROGRAMADOS else {par}
+        fora = par[0] in SISTEMAS_PROGRAMADOS or par[0] == SEM_CLASSIFICACAO
+        return set() if fora else {par}
     todos = {(i["s"], i["p"]) if isinstance(i, dict) else tuple(i) for i in itens}
-    falhas = {par for par in todos if par[0] not in SISTEMAS_PROGRAMADOS}
-    classificados = {par for par in falhas if par[0] != SEM_CLASSIFICACAO}
-    return classificados or falhas
+    return {
+        par for par in todos
+        if par[0] not in SISTEMAS_PROGRAMADOS and par[0] != SEM_CLASSIFICACAO
+    }
 
 
 def calcular_reincidencia(evento, eventos_por_frota, janela_dias):
