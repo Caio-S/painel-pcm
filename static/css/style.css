@@ -136,6 +136,14 @@ main{max-width:1660px;margin:0 auto;padding:16px 20px 60px}
 .tempo.ok{color:var(--green)}.tempo.warn{color:var(--amber)}.tempo.late{color:var(--red)}
 .sla-bar{flex:1;height:6px;background:#E3E9EF;border-radius:3px;overflow:hidden;min-width:50px}
 .sla-fill{height:100%;background:var(--green)}.sla-fill.warn{background:var(--amber)}.sla-fill.late{background:var(--red)}
+/* seta de expandir: o card só mostra até as horas paradas por padrão (os-more some) */
+.os-chevron{flex:none;width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:#fff;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink2);transition:transform .18s,color .18s,border-color .18s}
+.os-chevron svg{width:15px;height:15px;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.os-chevron:hover{color:var(--navy3);border-color:var(--navy3)}
+.os.os-open .os-chevron{transform:rotate(180deg);color:var(--navy3);border-color:var(--navy3)}
+.os-more{display:none}
+.os.os-open .os-more{display:block}
 .os-body{padding:9px 13px;flex:1}
 .pend{background:#F7F9FB;border:1px solid var(--line);border-radius:4px;padding:8px 9px;font-size:12px;line-height:1.5;margin-bottom:7px}
 .pend b{color:var(--navy2)}

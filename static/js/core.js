@@ -20,6 +20,7 @@ let abertaId = null;
 /* grupos recolhidos — guardados por chave, não por posição: o re-render reordena
    os grupos pelo número de O.S., então um índice apontaria pro grupo errado */
 let recolhidos = new Set();
+let expandidos = new Set();
 
 /* ============ util ============ */
 const esc = s => String(s == null ? "" : s).replace(/[<>&]/g, c => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
@@ -158,7 +159,8 @@ function card(o) {
       <button class="linklike" data-frota-hist="${o.veic}">Ver histórico da frota →</button>
       ${o.cobrado ? `<div class="cob">✓ Cobrança enviada em ${fmt(o.cobrado)}</div>` : ""}</div>`
     : (semH ? `<div class="pend" style="border-left:3px solid #A9B6C4;color:var(--ink2)">Sem histórico desta frota carregado — não dá para dizer se é reincidência.</div>` : "");
-  return `<article class="os ${vencida(o) ? 'vencida' : ''}">
+  const aberto = expandidos.has(o.os);
+  return `<article class="os ${vencida(o) ? 'vencida' : ''} ${aberto ? 'os-open' : ''}">
    <div class="os-top">
     <button class="frota clickable" data-frota-hist="${o.veic}">${o.veic}<span>${esc(o.mod || o.esp)}</span></button>
     <div class="os-meta">
@@ -173,19 +175,24 @@ function card(o) {
       <div class="tempo">${dur(agora() - new Date(o.ab))}<small>parado desde ${fmt(o.ab)}</small></div>
       <div class="tempo ${nv}">${dur(sr)}<small>sem retorno</small></div>
       <div class="sla-bar"><div class="sla-fill ${nv}" style="width:${pct}%"></div></div>
+      <button class="os-chevron" data-toggle="${o.os}" aria-expanded="${aberto}" aria-label="Mostrar mais detalhes">
+        <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
     </div>
-   <div class="os-body">
+   <div class="os-more">
+    <div class="os-body">
      ${(function () { const r = o.retrabalho; if (!r || r.n < 3) return ""; const b = r.pc >= 70 ? "b1" : r.pc >= 40 ? "b2" : "b3";
       return `<button class="rt ${b} clickable" data-frota-hist="${o.veic}">Retrabalho da frota: ${r.pc}% · ${r.re} de ${r.n} O.S. · ${r.h}h paradas</button>` })()}
      ${(o.resp || o.respFr) ? `<span class="resp">Responsável: ${esc(o.resp || o.respFr)}</span>` : `<span class="resp" style="color:var(--red);background:var(--red-bg)">Sem responsável</span>`}
      ${o.prevLib ? `<span class="resp" style="background:var(--green-bg);color:var(--green)">Previsão de liberação: ${fmt(o.prevLib)}</span>` : ""}
      ${rbox}${pend}
      <div class="ultimo">${ur ? `<b>Último retorno (${fmt(ur.em)}${ur.autor ? " · " + esc(ur.autor) : ""}):</b> ${esc(ur.txt)}` : "<b>Nenhum retorno registrado.</b> A contagem corre desde a abertura."}</div>
-   </div>
-   <div class="os-actions">
+    </div>
+    <div class="os-actions">
      <button class="btn btn-dark" data-act="ret" data-os="${o.os}">Registrar retorno</button>
      <button class="btn btn-line" data-act="det" data-os="${o.os}">Detalhar pendência</button>
      ${rc ? `<button class="btn btn-red" style="background:var(--red);color:#fff" data-act="cob" data-os="${o.os}">Cobrar reincidência</button>` : ""}</div>
+   </div>
   </article>`;
 }
 
@@ -215,6 +222,13 @@ function render() {
   });
   grupos.querySelectorAll("[data-act]").forEach(b => b.onclick = () => b.dataset.act === "ret" ? retornoRapido(b.dataset.os) : b.dataset.act === "cob" ? cobrar(b.dataset.os) : abrir(b.dataset.os));
   grupos.querySelectorAll("[data-frota-hist]").forEach(b => b.onclick = e => { e.stopPropagation(); abrirHistoricoFrota(b.dataset.frotaHist) });
+  grupos.querySelectorAll("[data-toggle]").forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    const os = b.dataset.toggle, art = b.closest(".os"), aberto = expandidos.has(os);
+    if (aberto) expandidos.delete(os); else expandidos.add(os);
+    art.classList.toggle("os-open", !aberto);
+    b.setAttribute("aria-expanded", String(!aberto));
+  });
 }
 
 function opcoes() {
