@@ -32,7 +32,15 @@ function fmt(s) {
   const d = new Date(s);
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" }) + " " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }
-function fmtd(s) { return s ? new Date(s).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—"; }
+/* "2026-08-06" (data pura) o JS interpreta como meia-noite UTC, e em UTC-3 o
+   toLocaleDateString devolve o dia ANTERIOR — a previsão de chegada saía 05/08
+   no card e 06/08 no formulário. Data com hora não tem esse problema: sem offset
+   ela já é lida como local. */
+function dataLocal(s) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ""));
+  return m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(s);
+}
+function fmtd(s) { return s ? dataLocal(s).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—"; }
 function li(s) {
   if (!s) return "";
   const d = new Date(s); if (isNaN(d)) return "";
