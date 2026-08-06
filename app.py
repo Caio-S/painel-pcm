@@ -193,7 +193,15 @@ def _regras_customizadas():
 def _frente_label(aloc):
     if not aloc:
         return ""
-    return f"{aloc.atividade or ''} {aloc.frente or ''}".strip()
+    ativ = (aloc.atividade or "").strip()
+    fr = (aloc.frente or "").strip()
+    # o export do ERP repete a categoria nas duas colunas — atividade
+    # "REBOQUE - CANAVIEIRO" com frente "REBOQUE" viraria "REBOQUE - CANAVIEIRO
+    # REBOQUE" no cabeçalho do grupo. Só a frente de verdade (F-1, F-2...)
+    # acrescenta informação à atividade.
+    if fr and ativ.upper().startswith(fr.upper()):
+        return ativ
+    return f"{ativ} {fr}".strip()
 
 
 def _vazio_detalhe_dict(os_num):
