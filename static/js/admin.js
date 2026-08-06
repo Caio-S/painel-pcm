@@ -102,20 +102,26 @@ async function contatosRender() {
    </div>
    <div class="fs" style="padding:0;overflow:auto;max-height:46vh">
      <table class="ct"><tr><th>Responsável</th><th style="width:200px">WhatsApp</th><th style="width:170px">E-mail</th>
-       <th style="width:160px">Função / equipe</th><th style="width:95px">Recebe sempre</th><th style="width:80px">Status</th></tr>
+       <th style="width:160px">Função / equipe</th><th style="width:95px">Recebe sempre</th><th style="width:80px">Status</th><th style="width:40px"></th></tr>
      ${nomes.map(n => { const c = cMap[n] || { tel: "", funcao: "", email: "", fixo: false }; const temTel = !!(c.tel || "").trim();
       return `<tr><td class="n">${esc(n)}</td>
         <td><input data-n="${esc(n)}" data-k="tel" value="${esc(c.tel)}" placeholder="34 99999-9999"></td>
         <td><input data-n="${esc(n)}" data-k="email" value="${esc(c.email)}" placeholder="nome@crv.com.br"></td>
         <td><input data-n="${esc(n)}" data-k="funcao" value="${esc(c.funcao)}" placeholder="Gerência da oficina"></td>
         <td style="text-align:center"><input type="checkbox" data-n="${esc(n)}" data-k="fixo" ${c.fixo ? "checked" : ""} style="width:17px;height:17px"></td>
-        <td class="${temTel ? 'zapok' : 'zapno'}">${temTel ? "com nº" : "sem número"}</td></tr>` }).join("")}
+        <td class="${temTel ? 'zapok' : 'zapno'}">${temTel ? "com nº" : "sem número"}</td>
+        <td style="text-align:center"><button class="btn btn-line" data-del="${esc(n)}" title="Apagar contato" style="padding:4px 8px;color:var(--red)">✕</button></td></tr>` }).join("")}
      </table></div>`;
   ctInfo.textContent = nomes.filter(n => (cMap[n] || {}).tel).length + " com WhatsApp · " + contatos.filter(c => c.fixo).length + " recebe(m) toda cobrança";
   ctBody.querySelectorAll("table.ct input").forEach(i => i.onchange = async () => {
     const n = i.dataset.n, c = Object.assign({ nome: n, tel: "", funcao: "", email: "", fixo: false }, cMap[n] || {});
     c[i.dataset.k] = i.type === "checkbox" ? i.checked : i.value.trim();
     try { await api('/contatos', { method: "PUT", body: JSON.stringify(c) }); await contatosRender(); } catch (e) { aviso(e.message) }
+  });
+  ctBody.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
+    if (!confirm(`Apagar o contato de ${b.dataset.del}? Se essa pessoa continuar como responsável em alguma O.S., ela volta a aparecer na lista sem os dados cadastrados.`)) return;
+    try { await api(`/contatos/${encodeURIComponent(b.dataset.del)}`, { method: "DELETE" }); await contatosRender(); opcoes(); aviso("Contato apagado."); }
+    catch (e) { aviso(e.message) }
   });
   document.getElementById("ctAdd").onclick = async () => {
     const n = document.getElementById("ctNovo").value.trim().toUpperCase();

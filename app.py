@@ -568,6 +568,15 @@ def api_contatos_upsert():
     return jsonify(c.to_dict())
 
 
+@app.route("/api/contatos/<path:nome>", methods=["DELETE"])
+def api_contatos_delete(nome):
+    c = db.session.get(Contato, (nome or "").strip().upper())
+    if c:
+        db.session.delete(c)
+        db.session.commit()
+    return "", 204
+
+
 # =============== classificação ===============
 
 
