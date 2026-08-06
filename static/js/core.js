@@ -341,6 +341,13 @@ async function retornoRapido(os) {
   } catch (e) { aviso(e.message) }
 }
 /* ============ histórico da frota ============ */
+/* horas paradas no formato do relatório do PCM: 20897:49 em vez de 20897.8h */
+function hm(h) {
+  if (!h) return "—";
+  return Math.floor(h) + ":" + String(Math.round(h % 1 * 60)).padStart(2, "0");
+}
+function dias(h) { return h ? (h / 24).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—" }
+
 /* o back-end já manda a reincidência no topo; aqui só marca onde ela acaba */
 function linhasHistorico(hist) {
   const re = hist.filter(h => h.re), resto = hist.filter(h => !h.re);
@@ -350,11 +357,17 @@ function linhasHistorico(hist) {
   const cel = h => h.re
     ? h.re.map(p => `<b>${esc(p.s)}</b><br><span style="font-size:10.5px;color:var(--ink2)">${esc(p.p)}</span>`).join("<br>")
     : `${esc(h.s) || "—"}<br><span style="font-size:10.5px;color:var(--ink2)">${esc(h.p) || ""}</span>`;
-  const linha = h => `<tr${h.re ? ' class="h-re"' : ""}><td class="n">${fmt(h.d)}</td>
+  const tipo = m => m ? `<span class="tp-${esc(m).toLowerCase()}">${esc(m)}</span>` : "—";
+  const linha = h => `<tr${h.re ? ' class="h-re"' : ""}>
+    <td class="n">${esc(h.os)}</td>
+    <td class="n">${fmt(h.d)}</td>
+    <td class="n">${h.lib ? fmt(h.lib) : "em aberto"}</td>
+    <td class="n">${hm(h.t)}</td>
+    <td class="n">${dias(h.t)}</td>
+    <td>${tipo(h.m)}</td>
     <td>${cel(h)}</td>
-    <td class="n">${h.t ? h.t.toFixed(1) + "h" : "—"}</td>
     <td style="font-size:11.5px">${esc((h.x || "").slice(0, 140))}</td></tr>`;
-  const div = (txt, cls) => `<tr class="h-div ${cls}"><td colspan="4">${txt}</td></tr>`;
+  const div = (txt, cls) => `<tr class="h-div ${cls}"><td colspan="8">${txt}</td></tr>`;
   if (!re.length) return hist.map(linha).join("");
   return div(`${re.length} O.S. que repetiram problema em ${CONFIG.reincDias} dias`, "re")
     + re.map(linha).join("")
@@ -380,7 +393,9 @@ async function abrirHistoricoFrota(veic) {
     ${abertas.length ? `<div class="fs"><h4>O.S. aberta agora</h4>
       <ul class="tl">${abertas.map(o => `<li><time>${fmt(o.ab)}</time><p>${esc(o.prob) || "—"}</p></li>`).join("")}</ul></div>` : ""}
     <div class="fs" style="padding:0;overflow:auto;max-height:44vh">
-      <table class="ct"><tr><th style="width:15%">Data</th><th style="width:24%">Sistema / Problema</th><th style="width:9%">Horas</th><th>Relato</th></tr>
+      <table class="ct hist"><tr>
+        <th>Nº O.S.</th><th>Data hora / parada</th><th>Data hora / liberação</th>
+        <th>Horas P</th><th>Dias</th><th>Tipo</th><th>Sistema / problema</th><th>Descrição do problema</th></tr>
       ${linhasHistorico(hist)}
       </table>
       ${hist.length ? "" : `<p style="padding:20px;text-align:center;color:var(--ink2)">Nenhum histórico carregado para esta frota ainda.</p>`}

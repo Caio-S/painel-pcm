@@ -103,6 +103,16 @@ main{max-width:1660px;margin:0 auto;padding:16px 20px 60px}
 .prob-re{background:var(--red-bg);color:var(--red);border-color:#EFC0BB}
 /* serviço programado: fica apagado porque não entra na reincidência */
 .prob-prog{background:#fff;color:#8A97A6;border-style:dashed}
+/* ficha da frota: as mesmas colunas do relatório que o PCM já usa */
+.ct.hist{min-width:1080px}
+.ct.hist th{white-space:nowrap}
+.ct.hist td:nth-child(-n+5){white-space:nowrap}
+.tp-corretiva,.tp-preventiva,.tp-reforma,.tp-preditiva{font-size:9.5px;font-weight:800;
+  letter-spacing:.06em;padding:2px 5px;border-radius:3px;white-space:nowrap}
+.tp-corretiva{background:var(--red-bg);color:var(--red)}
+.tp-preventiva{background:var(--green-bg);color:var(--green)}
+.tp-reforma{background:var(--amber-bg);color:var(--amber)}
+.tp-preditiva{background:#E9EDF2;color:#4A5A6B}
 /* ficha da frota: reincidência primeiro, depois o resto do histórico */
 .ct tr.h-div td{background:#EDF1F6;color:var(--navy2);font-size:10px;font-weight:800;
   letter-spacing:.08em;text-transform:uppercase;padding:5px 9px;position:sticky;top:0}
