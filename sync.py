@@ -5,6 +5,7 @@ pra um request síncrono, mesmo limite de timeout de proxy já documentado no pr
 import json
 import threading
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import business
 import mariadb_client
@@ -12,6 +13,17 @@ from models import ORIGEM_BANCO, Frota, Meta, OsAberta, OsHistorico, RegraClassi
 
 HISTORICO_BACKFILL_DIAS = 120
 MARGEM_SEGURANCA_MIN = 5
+
+# o MySQL da empresa guarda data_hora_abertura/liberacao em horário local (Brazil/East,
+# confirmado contra NOW()/UTC_TIMESTAMP() do servidor) — usar fuso explícito em vez de
+# datetime.now() porque o processo Python pode rodar num container em UTC (Render, por
+# padrão), e datetime.now() nesse caso devolveria UTC disfarçado de hora local (3h
+# adiantado). .replace(tzinfo=None) devolve naive pra comparar direto com o MySQL.
+_TZ_BRASIL = ZoneInfo("America/Sao_Paulo")
+
+
+def agora_brasil():
+    return datetime.now(_TZ_BRASIL).replace(tzinfo=None)
 
 _status = {"status": "idle"}
 
@@ -46,10 +58,7 @@ def sync_abertas_e_frota():
             agrupamento=f["agrupamento"], ativo=f["ativo"],
         ))
 
-    # hora local (não utcnow): o MySQL da empresa guarda data_hora_abertura/liberacao
-    # em horário local (Brazil/East, confirmado contra NOW() do servidor) — usar a
-    # mesma base do checkpoint do histórico evita mostrar os dois "desalinhados" na tela.
-    _set_meta("abertas_sync_em", datetime.now().isoformat())
+    _set_meta("abertas_sync_em", agora_brasil().isoformat())
 
     db.session.commit()
     return {"abertas": len(abertas), "frota": len(frota)}
@@ -150,12 +159,12 @@ def _sync_historico(app):
             checkpoint = _get_meta("historico_sync_ate")
             desde = (
                 datetime.fromisoformat(checkpoint) if checkpoint
-                else datetime.utcnow() - timedelta(days=HISTORICO_BACKFILL_DIAS)
+                else agora_brasil() - timedelta(days=HISTORICO_BACKFILL_DIAS)
             )
             # hora capturada ANTES da consulta, com margem de segurança: garante que a
             # próxima sincronização revê uma pequena sobreposição em vez de arriscar
             # perder um registro que fechou durante a busca (upsert é idempotente).
-            marca_tempo = datetime.now() - timedelta(minutes=MARGEM_SEGURANCA_MIN)
+            marca_tempo = agora_brasil() - timedelta(minutes=MARGEM_SEGURANCA_MIN)
 
             rows = mariadb_client.fetch_os_historico(desde)
             novos = _upsert_historico(rows)
