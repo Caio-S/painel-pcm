@@ -38,7 +38,9 @@ def _set_status(**kw):
 
 
 def sync_abertas_e_frota():
-    """Síncrono: poucas centenas de linhas, ~2-3s medido contra o banco real."""
+    """Síncrono: poucas centenas de linhas. ~7s medido contra o banco real — o filtro de
+    situação da frota (ver mariadb_client._situacao_atual_por_frota) faz 2 consultas
+    extras pra achar a situação mais recente de cada frota com O.S. aberta."""
     abertas = mariadb_client.fetch_os_abertas()
     frota = mariadb_client.fetch_frota()
 

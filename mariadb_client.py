@@ -51,6 +51,41 @@ def _prob(row):
     return prob[:500]
 
 
+def _situacao_atual_por_frota(cur, empresas, frotas):
+    """codigo_situacao_veiculo de uma O.S. é gravado quando ELA é criada/atualizada e
+    não é recalculado enquanto ela segue aberta — achado em produção: a O.S. 546972
+    (frota 62205) segue com o campo em 'P' (Parada) desde 29/06, mas a frota já rodou
+    (e voltou a rodar) várias vezes depois disso sem que essa O.S. específica fosse
+    tocada de novo (57 das 222 frotas com O.S. aberta tinham esse descompasso quando
+    verificado). A situação real do veículo é a da O.S. mais recente dele, aberta ou
+    fechada — não a da própria O.S. aberta que se está filtrando."""
+    if not frotas:
+        return {}
+    cur.execute(
+        f"""
+        SELECT codigo_frota, MAX(data_hora_abertura) AS max_ab
+        FROM vw_ordem_servico_frota
+        WHERE id_empresa IN ({_in_clause(empresas)}) AND codigo_frota IN ({_in_clause(frotas)})
+        GROUP BY codigo_frota
+        """,
+        empresas + frotas,
+    )
+    pares = [(r["codigo_frota"], r["max_ab"]) for r in cur.fetchall() if r["max_ab"]]
+    if not pares:
+        return {}
+    tuple_ph = ",".join(["(%s,%s)"] * len(pares))
+    flat = [v for p in pares for v in p]
+    cur.execute(
+        f"""
+        SELECT codigo_frota, codigo_situacao_veiculo
+        FROM vw_ordem_servico_frota
+        WHERE id_empresa IN ({_in_clause(empresas)}) AND (codigo_frota, data_hora_abertura) IN ({tuple_ph})
+        """,
+        empresas + flat,
+    )
+    return {str(r["codigo_frota"]): r["codigo_situacao_veiculo"] for r in cur.fetchall()}
+
+
 def fetch_os_abertas():
     """O.S. em aberto (Aberta = A, Em Execução = E) — filtra por codigo_status (código
     curto e estável) em vez do texto de descricao_status. Achado em produção: o texto
@@ -58,10 +93,9 @@ def fetch_os_abertas():
     (db_empresa.py, de onde este veio) assumia — isso excluía silenciosamente toda
     O.S. em execução do sync (ex.: frota 62515, O.S. 553935).
 
-    Também exige codigo_situacao_veiculo = 'P' (Parada) — confirmado direto no banco
-    que existe O.S. aberta/em execução com a frota marcada como 'R' (Rodando): tarefa
-    que não imobiliza o equipamento. O painel é sobre equipamento parado, então essas
-    não devem entrar."""
+    Só entra O.S. de frota parada — mas "parada" é a situação ATUAL da frota
+    (ver _situacao_atual_por_frota), não o campo da própria O.S. aberta, que pode
+    estar desatualizado."""
     empresas = _empresas()
     conn = _conn()
     try:
@@ -76,11 +110,14 @@ def fetch_os_abertas():
                 FROM vw_ordem_servico_frota
                 WHERE id_empresa IN ({_in_clause(empresas)})
                   AND codigo_status IN ('A', 'E')
-                  AND codigo_situacao_veiculo = 'P'
                 """,
                 empresas,
             )
             rows = cur.fetchall()
+
+            frotas = sorted({r["codigo_frota"] for r in rows if r.get("codigo_frota") is not None})
+            situacao = _situacao_atual_por_frota(cur, empresas, frotas)
+            rows = [r for r in rows if situacao.get(str(r.get("codigo_frota") or "")) == "P"]
     finally:
         conn.close()
 
