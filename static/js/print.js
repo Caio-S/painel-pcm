@@ -21,7 +21,7 @@ function imprimir() {
   const l = filtrar(), ab = l.filter(o => o.aberta), al = ab.filter(vencida);
   const g = agrupar(l, CONFIG.groupBy || "esp");
   const ftxt = [filtro.alerta ? "só vencidas" : "", filtro.semCls ? "sem classificação" : "", filtro.agr, filtro.esp, filtro.mod, filtro.frente, filtro.tp,
-  filtro.classe ? CONSTS.classes[filtro.classe].lbl : "", filtro.busca ? 'busca "' + filtro.busca + '"' : "", filtro.encerradas ? "encerradas" : "abertas"].filter(Boolean).join(" · ");
+  filtro.classe ? CONSTS.classes[filtro.classe].lbl : "", filtro.busca ? 'busca "' + filtro.busca + '"' : ""].filter(Boolean).join(" · ");
   let h = `<div class="ph"><img src="${logoAtual()}" style="height:28px;margin-right:10px;object-fit:contain"><div><b>O.S. abertas — equipamentos parados</b>
       <span>CRV Industrial · Unidade Capinópolis/MG · PCM — Planejamento e Controle de Manutenção</span></div>
       <div class="r">Emitido ${agora().toLocaleString("pt-BR")}<br>Agrupado por ${CONSTS.grupoLbl[CONFIG.groupBy || "esp"]} · ${ftxt || "todas"}</div></div>

@@ -317,27 +317,6 @@ def _get_or_create_detalhe(os_num):
     return d
 
 
-@app.route("/api/os", methods=["POST"])
-def api_os_nova():
-    payload = request.get_json(force=True) or {}
-    os_num = str(payload.get("os") or "").strip()
-    veic = str(payload.get("veic") or "").strip()
-    prob = str(payload.get("prob") or "").strip()
-    if not os_num or not veic:
-        return jsonify({"error": "Informe o número da O.S. e a frota."}), 400
-    if db.session.get(OsAberta, os_num):
-        return jsonify({"error": "Essa O.S. já está na lista."}), 409
-
-    o = OsAberta(
-        os=os_num, veic=veic, desc="", esp="CADASTRO MANUAL", mod="", marca="",
-        agr="CADASTRO MANUAL", ofic="—", mt="CORRETIVA", tp="O.S. INTERNA",
-        ab=datetime.utcnow(), prob=prob, sol="", prog="", origem=ORIGEM_MANUAL,
-    )
-    db.session.add(o)
-    db.session.commit()
-    return jsonify(o.to_dict()), 201
-
-
 @app.route("/api/os/<os_num>", methods=["PATCH"])
 def api_os_patch(os_num):
     if not db.session.get(OsAberta, os_num):
@@ -400,18 +379,6 @@ def api_os_retorno(os_num):
     db.session.add(OsRetorno(os=os_num, em=datetime.utcnow(), txt=txt, autor=(payload.get("autor") or "PCM").strip() or "PCM"))
     db.session.commit()
     d = db.session.get(OsDetalhe, os_num)
-    return jsonify(d.to_dict())
-
-
-@app.route("/api/os/<os_num>/encerrar", methods=["POST"])
-def api_os_encerrar(os_num):
-    if not db.session.get(OsAberta, os_num):
-        return jsonify({"error": "O.S. não encontrada."}), 404
-    d = _get_or_create_detalhe(os_num)
-    d.aberta = False
-    d.encerrada = datetime.utcnow()
-    db.session.add(OsRetorno(os=os_num, em=d.encerrada, txt="O.S. encerrada — equipamento liberado.", autor="PCM"))
-    db.session.commit()
     return jsonify(d.to_dict())
 
 

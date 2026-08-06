@@ -15,7 +15,7 @@ async function api(path, opts) {
 let CONSTS = { sisLista: [], probLista: {}, classes: {}, acoes: [], grupoLbl: {}, familias: {} };
 let CONFIG = { sla: 3, reincDias: 30, groupBy: 'frente', tvSeg: 22 };
 let OS_LIST = [];
-let filtro = { alerta: false, semCls: false, reinc: false, semH: false, agr: "", esp: "", mod: "", frente: "", tp: "", classe: "", busca: "", encerradas: false };
+let filtro = { alerta: false, semCls: false, reinc: false, semH: false, agr: "", esp: "", mod: "", frente: "", tp: "", classe: "", busca: "" };
 let abertaId = null;
 
 /* ============ util ============ */
@@ -55,7 +55,6 @@ const v = id => { const e = document.getElementById(id); return e ? e.value.trim
 function filtrar() {
   const q = filtro.busca.toLowerCase();
   return OS_LIST.filter(o => {
-    if (filtro.encerradas ? o.aberta : !o.aberta) return false;
     if (filtro.alerta && !vencida(o)) return false;
     if (filtro.semCls && o.classe !== "NAO") return false;
     if (filtro.reinc && !o.reinc) return false;
@@ -69,7 +68,6 @@ function filtrar() {
     if (q && !((o.veic + " " + o.os + " " + o.desc + " " + o.mod + " " + o.esp + " " + o.prob + " " + (o.detalhe || "") + " " + (o.resp || "") + " " + o.frente + " " + (o.item.peca || "") + " " + (o.item.sol || "") + " " + (o.item.ped || "")).toLowerCase().includes(q))) return false;
     return true;
   }).sort((a, b) => {
-    if (!a.aberta) return new Date(b.encerrada) - new Date(a.encerrada);
     const va = vencida(a), vb = vencida(b);
     if (va !== vb) return va ? -1 : 1;
     return semRet(b) - semRet(a);
@@ -142,29 +140,29 @@ function card(o) {
   if (o.classe === "MATERIAL") pend = blocoMat(o);
   else if (o.classe === "MAO_OBRA") pend = `<div class="pend"><b>Mão de obra:</b> ${esc(o.mo.causa) || "causa não informada"}${o.mo.mecanico ? " — " + esc(o.mo.mecanico) : ""}</div>`;
   else if (o.detalhe) pend = `<div class="pend">${esc(o.detalhe)}</div>`;
-  const rc = o.aberta ? o.reinc : null;
-  const semH = o.aberta && !rc && o.semHistorico;
+  const rc = o.reinc;
+  const semH = !rc && o.semHistorico;
   const rbox = rc ? `<div class="rbox"><b>REINCIDÊNCIA — ${rc.n}ª ocorrência em ${CONFIG.reincDias} dias.</b>
       ${listaPares(rc.pares, o)} — voltou em ${rc.voltaEm} dia(s), ${rc.horas}h paradas nas ocorrências anteriores.
       <button class="linklike" data-frota-hist="${o.veic}">Ver histórico da frota →</button>
       ${o.cobrado ? `<div class="cob">✓ Cobrança enviada em ${fmt(o.cobrado)}</div>` : ""}</div>`
     : (semH ? `<div class="pend" style="border-left:3px solid #A9B6C4;color:var(--ink2)">Sem histórico desta frota carregado — não dá para dizer se é reincidência.</div>` : "");
-  return `<article class="os ${o.aberta && vencida(o) ? 'vencida' : ''}">
+  return `<article class="os ${vencida(o) ? 'vencida' : ''}">
    <div class="os-top">
     <button class="frota clickable" data-frota-hist="${o.veic}">${o.veic}<span>${esc(o.mod || o.esp)}</span></button>
     <div class="os-meta">
       <div class="tags">${rc ? `<span class="tag reinc flash">${rc.n}ª vez · ${rc.voltaEm}d</span>` : ""}<span class="tag tagfr">${esc(o.frente)}</span><span class="tag ${c.cls}">${c.lbl}</span>
-        ${o.aberta && vencida(o) ? '<span class="tag diag flash">retorno vencido</span>' : ''}</div>
+        ${vencida(o) ? '<span class="tag diag flash">retorno vencido</span>' : ''}</div>
       <div class="veic">${esc(o.desc)} · ${esc(o.esp)} · O.S. ${o.os} · ${esc(o.ofic)}</div>
       <div class="motivo">${esc(o.prob) || "—"}</div>
       ${chipsProblemas(o)}
     </div>
    </div>
-   ${o.aberta ? `<div class="os-clock">
+   <div class="os-clock">
       <div class="tempo">${dur(agora() - new Date(o.ab))}<small>parado desde ${fmt(o.ab)}</small></div>
       <div class="tempo ${nv}">${dur(sr)}<small>sem retorno</small></div>
       <div class="sla-bar"><div class="sla-fill ${nv}" style="width:${pct}%"></div></div>
-    </div>` : `<div class="os-clock"><div class="tempo">${dur(new Date(o.encerrada) - new Date(o.ab))}<small>parada total · encerrada ${fmt(o.encerrada)}</small></div></div>`}
+    </div>
    <div class="os-body">
      ${(function () { const r = o.retrabalho; if (!r || r.n < 3) return ""; const b = r.pc >= 70 ? "b1" : r.pc >= 40 ? "b2" : "b3";
       return `<button class="rt ${b} clickable" data-frota-hist="${o.veic}">Retrabalho da frota: ${r.pc}% · ${r.re} de ${r.n} O.S. · ${r.h}h paradas</button>` })()}
@@ -173,18 +171,16 @@ function card(o) {
      ${rbox}${pend}
      <div class="ultimo">${ur ? `<b>Último retorno (${fmt(ur.em)}${ur.autor ? " · " + esc(ur.autor) : ""}):</b> ${esc(ur.txt)}` : "<b>Nenhum retorno registrado.</b> A contagem corre desde a abertura."}</div>
    </div>
-   ${o.aberta ? `<div class="os-actions">
+   <div class="os-actions">
      <button class="btn btn-dark" data-act="ret" data-os="${o.os}">Registrar retorno</button>
      <button class="btn btn-line" data-act="det" data-os="${o.os}">Detalhar pendência</button>
-     ${rc ? `<button class="btn btn-red" style="background:var(--red);color:#fff" data-act="cob" data-os="${o.os}">Cobrar reincidência</button>` : ""}</div>`
-    : `<div class="os-actions"><button class="btn btn-line" data-act="det" data-os="${o.os}">Ver histórico</button></div>`}
+     ${rc ? `<button class="btn btn-red" style="background:var(--red);color:#fff" data-act="cob" data-os="${o.os}">Cobrar reincidência</button>` : ""}</div>
   </article>`;
 }
 
 function render() {
   kpis();
   chSemH.classList.toggle("on", filtro.semH);
-  btnEncerradas.textContent = filtro.encerradas ? "Ver abertas" : "Ver encerradas";
   const l = filtrar();
   cont.textContent = l.length + " O.S. na tela";
   const g = agrupar(l, CONFIG.groupBy);
@@ -318,7 +314,6 @@ function abrir(os) {
   };
   const btnCobModal = document.getElementById("btnCobrarModal");
   if (btnCobModal) btnCobModal.onclick = () => cobrar(o.os);
-  mEncerrar.style.display = o.aberta ? "block" : "none";
   mask.classList.add("on");
 }
 
@@ -345,16 +340,6 @@ async function retornoRapido(os) {
     await carregarOS(); render(); aviso("Retorno registrado. Contagem zerada.");
   } catch (e) { aviso(e.message) }
 }
-async function nova() {
-  const n = prompt("Número da O.S.:"); if (!n) return;
-  if (OS_LIST.some(x => x.os === n.trim())) { aviso("Essa O.S. já está na lista."); return }
-  const veic = prompt("Frota / equipamento:") || "", prob = prompt("Descrição do problema:") || "";
-  try {
-    await api("/os", { method: "POST", body: JSON.stringify({ os: n.trim(), veic: veic.trim(), prob: prob.trim() }) });
-    await carregarOS(); opcoes(); render(); abrir(n.trim());
-  } catch (e) { aviso(e.message) }
-}
-
 /* ============ histórico da frota ============ */
 /* o back-end já manda a reincidência no topo; aqui só marca onde ela acaba */
 function linhasHistorico(hist) {
@@ -451,9 +436,7 @@ function relogio() {
   const d = agora(); clk.textContent = d.toLocaleTimeString("pt-BR");
   clkd.textContent = d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" });
 }
-btnNova.onclick = nova;
 btnAtualizar.onclick = atualizarAgora;
-btnEncerradas.onclick = () => { filtro.encerradas = !filtro.encerradas; render() };
 chSemH.onclick = () => { filtro.semH = !filtro.semH; render() };
 document.querySelectorAll(".kpi[data-filtro]").forEach(el => el.onclick = () => {
   const k = el.dataset.filtro;
@@ -473,14 +456,6 @@ document.getElementById("sla").onchange = async e => { const x = parseFloat(e.ta
 mX.onclick = () => mask.classList.remove("on");
 mask.onclick = e => { if (e.target === mask) mask.classList.remove("on") };
 mSalvar.onclick = salvarModal;
-mEncerrar.onclick = async () => {
-  const o = achar(abertaId);
-  if (!confirm("Encerrar a O.S. " + abertaId + " (frota " + o.veic + ")?")) return;
-  try {
-    await api(`/os/${encodeURIComponent(abertaId)}/encerrar`, { method: "POST" });
-    await carregarOS(); mask.classList.remove("on"); render(); aviso("O.S. encerrada.");
-  } catch (e) { aviso(e.message) }
-};
 mExcluir.onclick = async () => {
   if (!confirm("Limpar os dados do PCM desta O.S.? A ficha do sistema continua na lista.")) return;
   try {
