@@ -182,11 +182,14 @@ REGRAS = [
     ("*", _t(r"(motor de partida|nao pega na partida|sem partida|nao da partida|nao liga|partida)"), "Sistema Elétrico", "Sem partida"),
     ("*", _t(r"(bateria|alternador)"), "Sistema Elétrico", "Bateria / alternador"),
     ("*", _t(r"(sensor|chicote|fusivel|painel|monitor|modulo|eletric)"), "Sistema Elétrico", "Sensor / chicote / painel"),
-    ("*", _t(r"(farol|lanterna|luz|lampada|seta|giroflex)"), "Sistema Elétrico", "Iluminação / faróis"),
+    # far[oa](l|is) cobre farol/farois/faral/farais — a oficina escreve dos quatro jeitos
+    ("*", _t(r"(far[oa](l|is)|lanterna|luz|lampada|seta|giroflex)"), "Sistema Elétrico", "Iluminação / faróis"),
     ("*", _t(r"(tacografo|rastreador|telemetria|gps|camera)"), "Tacógrafo / Telemetria",
      lambda t: "Tacógrafo" if re.search(r"tacografo", t) else "Rastreador / telemetria"),
     ("*", _t(r"(ar condicionado|climatizador|evaporador|compressor do ar)"), "Cabine / Ar Condicionado", "Ar condicionado"),
-    ("*", _t(r"(vidro|espelho|retrovisor|porta da cabine|para brisa|parabrisa)"), "Cabine / Ar Condicionado", "Vidro / porta / espelho"),
+    # \bportas?\b em vez de "porta da cabine": trava de porta, colocar porta, porta
+    # não fecha. A borda de palavra é o que impede casar dentro de "transportador".
+    ("*", _t(r"(vidro|espelho|retrovisor|\bportas?\b|para brisa|parabrisa)"), "Cabine / Ar Condicionado", "Vidro / porta / espelho"),
     ("*", _t(r"(banco|cinto|estofado|acabamento interno|calafetar)"), "Cabine / Ar Condicionado", "Banco / cinto / acabamento"),
     ("LEVE", _t(r"(lataria|pintura|amassad|funilaria)"), "Lataria / Vidros", "Lataria / pintura"),
     ("*", _t(r"(tomada de forca|tdp)"), "Tomada de força / Engate", "Tomada de força"),
@@ -209,8 +212,9 @@ REGRAS = [
     ("*", _t(r"(oleo)"), "Motor", "Filtros / troca de óleo"),
 
     ("*", _t(r"(lavagem|lubrific|graxa|engraxar)"), "Lavagem / Preventiva / Pit Stop", "Lavagem / lubrificação"),
-    ("*", _t(r"(preventiva|revisao|manutencao geral|manutencao periodica|inspecao)"), "Lavagem / Preventiva / Pit Stop", "Preventiva / revisão"),
-    ("*", _t(r"pit stop"), "Lavagem / Preventiva / Pit Stop", "Pit stop"),
+    ("*", _t(r"(preventiva|preditiva|revisao|manutencao geral|manutencao periodica|inspecao)"), "Lavagem / Preventiva / Pit Stop", "Preventiva / revisão"),
+    # pit stop aparece quase sempre com hífen no banco ("pit-stop", "pits-stop")
+    ("*", _t(r"(pit.?stop|pits.?stop|limpeza a seco)"), "Lavagem / Preventiva / Pit Stop", "Pit stop"),
     ("*", _t(r"(motor|avaliar motor|manutencao motor|trocar motor)"), "Motor", "Outros"),
     ("*", _t(r"(vazamento|vazando)"), "Sistema Hidráulico", "Vazamento de óleo hidráulico"),
     ("*", _t(r"(bomba|rolamento|eixo)"), "Transmissão / Câmbio", "Outros"),
