@@ -132,6 +132,11 @@ def api_sync_status():
     return jsonify(sync.get_status())
 
 
+@app.route("/api/sync/info")
+def api_sync_info():
+    return jsonify(sync.get_sync_info())
+
+
 # =============== configuração / constantes ===============
 
 DEFAULT_SLA = 3

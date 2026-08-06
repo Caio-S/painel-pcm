@@ -46,6 +46,11 @@ def sync_abertas_e_frota():
             agrupamento=f["agrupamento"], ativo=f["ativo"],
         ))
 
+    # hora local (não utcnow): o MySQL da empresa guarda data_hora_abertura/liberacao
+    # em horário local (Brazil/East, confirmado contra NOW() do servidor) — usar a
+    # mesma base do checkpoint do histórico evita mostrar os dois "desalinhados" na tela.
+    _set_meta("abertas_sync_em", datetime.now().isoformat())
+
     db.session.commit()
     return {"abertas": len(abertas), "frota": len(frota)}
 
@@ -61,6 +66,16 @@ def _set_meta(chave, valor):
         row = Meta(chave=chave)
         db.session.add(row)
     row.valor = valor
+
+
+def get_sync_info():
+    """Timestamps pra mostrar na tela: quando as O.S. abertas foram trazidas do banco
+    da empresa, e até quando o histórico já foi processado (checkpoint do sync
+    incremental — ver _sync_historico)."""
+    return {
+        "abertasSyncEm": _get_meta("abertas_sync_em"),
+        "historicoSyncAte": _get_meta("historico_sync_ate"),
+    }
 
 
 LOTE = 500

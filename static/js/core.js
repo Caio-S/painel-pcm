@@ -390,12 +390,23 @@ maskFrota.onclick = e => { if (e.target === maskFrota) maskFrota.classList.remov
 async function carregarOS() {
   OS_LIST = await api('/os');
 }
+function fmtSync(s) {
+  if (!s) return "nunca";
+  return new Date(s).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) + " " + new Date(s).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+async function carregarSyncInfo() {
+  try {
+    const s = await api('/sync/info');
+    stChip.textContent = "O.S.: " + fmtSync(s.abertasSyncEm) + " · Histórico até: " + fmtSync(s.historicoSyncAte);
+    stChip.style.display = "inline-block";
+  } catch (e) { /* não crítico */ }
+}
 async function carregarTudo() {
   const [consts, cfg] = await Promise.all([api('/constants'), api('/config')]);
   CONSTS = consts; CONFIG = cfg;
   document.getElementById("sla").value = CONFIG.sla;
   await carregarOS();
-  opcoes(); render();
+  opcoes(); render(); carregarSyncInfo();
 }
 
 async function atualizarAgora() {
@@ -403,7 +414,7 @@ async function atualizarAgora() {
   try {
     const r = await api('/sync/atualizar', { method: 'POST' });
     aviso(r.abertas + " O.S. abertas · " + r.frota + " frotas atualizadas. Histórico sincronizando…");
-    await carregarOS(); opcoes(); render();
+    await carregarOS(); opcoes(); render(); carregarSyncInfo();
     pollSyncStatus();
   } catch (e) { aviso(e.message) } finally { btnAtualizar.disabled = false }
 }
@@ -411,7 +422,7 @@ function pollSyncStatus() {
   const t = setInterval(async () => {
     const s = await api('/sync/status');
     if (s.status === 'concluido') {
-      clearInterval(t); aviso("Histórico sincronizado: " + s.novos + " O.S. novas."); await carregarOS(); render();
+      clearInterval(t); aviso("Histórico sincronizado: " + s.novos + " O.S. novas."); await carregarOS(); render(); carregarSyncInfo();
     } else if (s.status === 'erro') { clearInterval(t); aviso("Falha no sync de histórico: " + s.mensagem); }
   }, 4000);
 }
