@@ -59,7 +59,14 @@ function carimbaAgora(idNumero, idData) {
 }
 function ultRet(o) { return (o.retornos && o.retornos.length) ? new Date(o.retornos.map(r => r.em).sort().slice(-1)[0]) : new Date(o.ab); }
 function semRet(o) { return agora() - ultRet(o); }
-function vencida(o) { return o.aberta && horas(semRet(o)) >= CONFIG.sla; }
+function vencida(o) {
+  if (!o.aberta) return false;
+  // com previsão de entrega de material registrada, o retorno não conta como vencido
+  // enquanto o prazo previsto ainda não passou — cobrar retorno antes da peça chegar
+  // não faz sentido, mesmo que já tenha passado o SLA normal de horas.
+  if (o.classe === "MATERIAL" && o.item && o.item.previsao && agora() < dataLocal(o.item.previsao)) return false;
+  return horas(semRet(o)) >= CONFIG.sla;
+}
 let tId; function aviso(m) { toast.textContent = m; toast.classList.add("on"); clearTimeout(tId); tId = setTimeout(() => toast.classList.remove("on"), 2600); }
 const v = id => { const e = document.getElementById(id); return e ? e.value.trim() : "" };
 
