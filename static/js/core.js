@@ -91,12 +91,16 @@ let tId; function aviso(m) { toast.textContent = m; toast.classList.add("on"); c
 const v = id => { const e = document.getElementById(id); return e ? e.value.trim() : "" };
 
 /* ============ filtro / agrupamento ============ */
-function filtrar() {
+// filtros "estruturais" (barra de cima: agrupamento, especialidade, modelo, frente,
+// tipo, pendência, busca, sem histórico) — recortam QUAL equipamento está em tela,
+// e por isso os KPIs também devem respeitar esse recorte (filtrar colhedoras deve
+// atualizar os números dos KPIs pra só colhedoras). Os toggles dos próprios KPIs
+// (retorno vencido, sem classificação, reincidência) ficam de fora daqui: cada KPI
+// calcula sua contagem em cima da base, não em cima do resultado de se clicar nele
+// mesmo — senão o número exibido colapsaria pro tamanho da lista já filtrada.
+function filtrarBase() {
   const q = filtro.busca.toLowerCase();
   return OS_LIST.filter(o => {
-    if (filtro.alerta && !vencida(o)) return false;
-    if (filtro.semCls && o.classe !== "NAO") return false;
-    if (filtro.reinc && !o.reinc) return false;
     if (filtro.semH && !o.semHistorico) return false;
     if (filtro.agr && o.agr !== filtro.agr) return false;
     if (filtro.esp && o.esp !== filtro.esp) return false;
@@ -105,6 +109,14 @@ function filtrar() {
     if (filtro.tp && o.tp !== filtro.tp) return false;
     if (filtro.classe && o.classe !== filtro.classe) return false;
     if (q && !((o.veic + " " + o.os + " " + o.desc + " " + o.mod + " " + o.esp + " " + o.prob + " " + (o.detalhe || "") + " " + (o.resp || "") + " " + o.frente + " " + (o.item.peca || "") + " " + (o.item.sol || "") + " " + (o.item.ped || "")).toLowerCase().includes(q))) return false;
+    return true;
+  });
+}
+function filtrar() {
+  return filtrarBase().filter(o => {
+    if (filtro.alerta && !vencida(o)) return false;
+    if (filtro.semCls && o.classe !== "NAO") return false;
+    if (filtro.reinc && !o.reinc) return false;
     return true;
   }).sort((a, b) => {
     const va = vencida(a), vb = vencida(b);
@@ -119,7 +131,7 @@ function agrupar(l, by) {
   return g;
 }
 function kpis() {
-  const ab = OS_LIST.filter(o => o.aberta), al = ab.filter(vencida);
+  const ab = filtrarBase().filter(o => o.aberta), al = ab.filter(vencida);
   const mat = ab.filter(o => o.classe === "MATERIAL"), sem = ab.filter(o => o.classe === "NAO");
   kAlert.textContent = al.length; kAlertSub.textContent = "de " + ab.length + " O.S. sem retorno há +" + CONFIG.sla + "h";
   kAbertas.textContent = ab.length; kAbertasSub.textContent = [...new Set(ab.map(o => o.esp))].length + " especialidades";
