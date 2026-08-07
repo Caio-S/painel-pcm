@@ -61,9 +61,25 @@ function ultRet(o) { return (o.retornos && o.retornos.length) ? new Date(o.retor
 function semRet(o) { return agora() - ultRet(o); }
 // duas previsões possíveis: liberação do equipamento (prevLib, qualquer classe —
 // preenchida em Detalhar pendência) ou chegada da peça (item.previsao, só MATERIAL).
-// Qualquer uma das duas presente já substitui o SLA de horas.
-function temPrevisao(o) { return !!o.prevLib || (o.classe === "MATERIAL" && !!(o.item && o.item.previsao)) }
-function previsaoLabel(o) { return o.prevLib ? fmt(o.prevLib) : fmtd(o.item.previsao) }
+// Vale a que ainda não passou: prazo combinado só substitui o SLA enquanto está de
+// pé. Depois que vence, a O.S. volta a cobrar sozinha — é justamente a promessa não
+// cumprida que interessa. A de peça é data pura, então só expira no fim do dia:
+// senão uma peça que chega hoje já nasceria vencida de manhã.
+function previsaoEm(o) {
+  const datas = [];
+  if (o.prevLib) datas.push(new Date(o.prevLib));
+  if (o.classe === "MATERIAL" && o.item && o.item.previsao) {
+    const d = dataLocal(o.item.previsao);
+    d.setHours(23, 59, 59, 999);
+    datas.push(d);
+  }
+  const futuras = datas.filter(d => !isNaN(d) && d > agora()).sort((a, b) => a - b);
+  return futuras.length ? futuras[0] : null;
+}
+function temPrevisao(o) { return !!previsaoEm(o) }
+function previsaoLabel(o) {
+  return (o.prevLib && new Date(o.prevLib) > agora()) ? fmt(o.prevLib) : fmtd(o.item.previsao);
+}
 function vencida(o) {
   if (!o.aberta) return false;
   // com previsão cadastrada, a tag vira "Previsão: dd/mm" em vez de "retorno
