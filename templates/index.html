@@ -27,6 +27,7 @@
       <button class="tbtn" id="btnPrint"><svg viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-6h16v6h-2M8 14h8v7H8z"/></svg>Lista para PDF</button>
       <button class="tbtn" id="btnDisp"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Disponibilidade</button>
       <button class="tbtn" id="btnResumo"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="10" height="14" rx="2"/><path d="M15 21H5V7"/></svg>Copiar resumo</button>
+      <button class="tbtn" id="btnHistFrota"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v3l2 2"/></svg>Histórico de frota</button>
     </div>
     <div class="tsep"></div>
     <div class="tgrp"><span class="lbl">Cadastros</span>
@@ -173,6 +174,18 @@
       <div class="grow"></div><button class="btn btn-dark" id="fhFechar">Fechar</button></div>
   </div>
 </div>
+
+<div class="mask" id="maskBuscaFrota">
+  <div class="modal" style="max-width:480px">
+    <div class="mhead"><div class="frota" style="font-size:17px;letter-spacing:.08em">HISTÓRICO DE FROTA<span>Veja a reincidência mesmo sem O.S. aberta agora</span></div><button class="x" id="bfX">&times;</button></div>
+    <div class="mbody">
+      <div class="f"><label>Frota</label>
+        <input id="bfCodigo" list="dlFrotasTodas" placeholder="Código, modelo ou especialidade" autocomplete="off"></div>
+    </div>
+    <div class="mfoot"><div class="grow"></div><button class="btn btn-dark" id="bfVer">Ver histórico</button></div>
+  </div>
+</div>
+<datalist id="dlFrotasTodas"></datalist>
 
 <div class="toast" id="toast"></div>
 <datalist id="dlResp"></datalist>

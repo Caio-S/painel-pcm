@@ -487,6 +487,32 @@ async function abrirHistoricoFrota(veic) {
 fhX.onclick = fhFechar.onclick = () => maskFrota.classList.remove("on");
 maskFrota.onclick = e => { if (e.target === maskFrota) maskFrota.classList.remove("on") };
 
+/* busca de frota sem O.S. aberta — mesma ficha/relatório de reincidência de
+   abrirHistoricoFrota, só que o ponto de entrada não depende de ter um card de
+   O.S. aberta pra clicar (abertas fica vazio e o card de destaque do relatório
+   simplesmente não aparece — já é o comportamento natural da função). */
+function _codigoDeBuscaFrota(texto) {
+  const codigo = (texto || "").trim().split(" — ")[0].trim();
+  return FROTA_LIST.some(f => f.c === codigo) ? codigo : null;
+}
+btnHistFrota.onclick = async () => {
+  if (!FROTA_LIST.length) FROTA_LIST = await api('/frota');
+  dlFrotasTodas.innerHTML = FROTA_LIST.map(f => `<option value="${esc(f.c)} — ${esc(f.m)} — ${esc(f.e)}">`).join("");
+  bfCodigo.value = "";
+  maskBuscaFrota.classList.add("on");
+  setTimeout(() => bfCodigo.focus(), 50);
+};
+bfX.onclick = () => maskBuscaFrota.classList.remove("on");
+maskBuscaFrota.onclick = e => { if (e.target === maskBuscaFrota) maskBuscaFrota.classList.remove("on") };
+async function confirmarBuscaFrota() {
+  const codigo = _codigoDeBuscaFrota(v("bfCodigo"));
+  if (!codigo) { aviso("Escolha uma frota da lista."); return }
+  maskBuscaFrota.classList.remove("on");
+  await abrirHistoricoFrota(codigo);
+}
+bfVer.onclick = confirmarBuscaFrota;
+bfCodigo.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); confirmarBuscaFrota() } });
+
 /* ============ carregamento ============ */
 async function carregarOS() {
   OS_LIST = await api('/os');
