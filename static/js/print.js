@@ -75,6 +75,75 @@ function imprimir() {
   window.print();
 }
 
+/* ============ relatório de reincidência de uma frota ============ */
+/* imprime a ficha aberta: a O.S. de agora, o que ela repete e o histórico ao
+   redor — é o documento que acompanha a cobrança ao responsável. */
+function imprimirFichaFrota() {
+  const d = fichaAberta;
+  if (!d) { aviso("Abra o histórico de uma frota antes de imprimir."); return }
+  const f = d.frota || {}, aloc = d.aloc || {}, rt = d.retrabalho;
+  const hist = d.historico || [], abertas = d.abertas || [];
+  const liga = hist.filter(h => h.reAberta), repet = hist.filter(h => !h.reAberta && h.re);
+  if (!liga.length && !repet.length) { aviso("Esta frota não tem reincidência para imprimir."); return }
+
+  // mesma regra do back-end: o export do ERP repete a categoria nas duas colunas
+  const ativ = (aloc.ativ || "").trim(), fr = (aloc.fr || "").trim();
+  const frente = (fr && ativ.toUpperCase().startsWith(fr.toUpperCase())
+    ? ativ : `${ativ} ${fr}`.trim()) || "sem frente definida";
+  let h = `<div class="ph"><img src="${logoAtual()}" style="height:28px;margin-right:10px;object-fit:contain">
+      <div><b>Reincidência — frota ${d.codigo}</b>
+      <span>CRV Industrial · Unidade Capinópolis/MG · PCM — Planejamento e Controle de Manutenção</span></div>
+      <div class="r">Emitido ${agora().toLocaleString("pt-BR")}<br>${esc(f.m || "")} · ${esc(f.e || "")}</div></div>
+    <div class="psum">
+      <div>Frente / atividade<b style="font-size:9pt">${esc(frente)}</b></div>
+      <div>Responsável<b style="font-size:9pt">${esc(aloc.resp || "não definido")}</b></div>
+      <div>O.S. no histórico<b>${hist.length}</b></div>
+      <div>Retrabalho<b>${rt ? rt.pc + "%" : "—"}</b></div>
+      <div>Horas paradas<b>${rt ? Math.round(rt.h).toLocaleString("pt-BR") : 0}</b></div></div>`;
+
+  abertas.forEach(o => {
+    const c = OS_LIST.find(x => x.os === o.os);
+    h += `<h3 class="pg">O.S. aberta agora — ${o.os}</h3>
+      <table class="pt"><colgroup><col style="width:13%"><col style="width:13%"><col style="width:12%"><col style="width:62%"></colgroup>
+      <tr><th>Aberta em</th><th>Parada há</th><th>Pendência</th><th>Problema relatado</th></tr>
+      <tr><td class="num">${fmtPt(o.ab)}</td><td class="num">${dur(agora() - new Date(o.ab))}</td>
+        <td>${c ? CONSTS.classes[c.classe].lbl : "—"}</td>
+        <td>${esc(o.prob || "—")}${c && c.detalhe ? "<br><i>" + esc(c.detalhe) + "</i>" : ""}</td></tr></table>`;
+    if (c && c.itensC && c.itensC.length) {
+      h += `<table class="pt" style="margin-top:4px"><colgroup><col style="width:26%"><col style="width:74%"></colgroup>
+        <tr><th>Problema classificado</th><th>Trecho da descrição</th></tr>
+        ${c.itensC.map(i => `<tr><td>${esc(i.s)} · ${esc(i.p)}</td><td>${esc(i.x || "")}</td></tr>`).join("")}</table>`;
+    }
+  });
+
+  const cols = `<colgroup><col style="width:8%"><col style="width:13%"><col style="width:13%"><col style="width:7%">
+    <col style="width:6%"><col style="width:9%"><col style="width:19%"><col style="width:25%"></colgroup>`;
+  const cab = `<tr><th>Nº O.S.</th><th>Data hora / parada</th><th>Data hora / liberação</th><th>Horas P</th>
+    <th>Dias</th><th>Tipo</th><th>Sistema / problema</th><th>Descrição do problema</th></tr>`;
+  const linha = x => {
+    const par = (x.reAberta || x.re || []).map(p => esc(p.s) + " · " + esc(p.p)).join("<br>")
+      || (esc(x.s) + " · " + esc(x.p));
+    return `<tr><td class="num">${esc(x.os)}</td><td class="num">${fmtPt(x.d)}</td>
+      <td class="num">${x.lib ? fmtPt(x.lib) : "em aberto"}</td><td class="num">${hm(x.t)}</td>
+      <td class="num">${dias(x.t)}</td><td>${esc(x.m || "—")}</td><td>${par}</td>
+      <td>${esc(x.x || "")}</td></tr>`;
+  };
+  if (liga.length) {
+    h += `<h3 class="pg">${liga.length} O.S. com o mesmo problema da O.S. aberta agora</h3>
+      <table class="pt">${cols}${cab}${liga.map(linha).join("")}</table>`;
+  }
+  if (repet.length) {
+    h += `<h3 class="pg">${repet.length === 1 ? "Outra O.S. que repetiu" : "Outras " + repet.length + " O.S. que repetiram"}
+      problema em ${CONFIG.reincDias} dias</h3>
+      <table class="pt">${cols}${cab}${repet.map(linha).join("")}</table>`;
+  }
+  h += `<div class="pfoot">Reincidência: mesma frota repetindo o mesmo par sistema/problema dentro de ${CONFIG.reincDias} dias.
+    Preventiva, preditiva e reforma não entram — entram na oficina por plano, não por falha.</div>`;
+  document.getElementById("print").innerHTML = h;
+  window.print();
+}
+fhImprimir.onclick = imprimirFichaFrota;
+
 /* ============ relatório de disponibilidade por frente ============ */
 function imprimirDisponibilidade() {
   const g = frentesAlocadas();

@@ -21,6 +21,9 @@ let abertaId = null;
    os grupos pelo número de O.S., então um índice apontaria pro grupo errado */
 let recolhidos = new Set();
 let expandidos = new Set();
+/* última ficha de frota carregada — o relatório de reincidência imprime a partir
+   dela, pra sair exatamente o que está na tela */
+let fichaAberta = null;
 
 /* ============ util ============ */
 const esc = s => String(s == null ? "" : s).replace(/[<>&]/g, c => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
@@ -454,6 +457,7 @@ async function abrirHistoricoFrota(veic) {
   let dados;
   try { dados = await api(`/frota/${encodeURIComponent(veic)}/historico`); }
   catch (e) { aviso(e.message); return; }
+  fichaAberta = dados;   // o relatório de reincidência imprime exatamente o que está na tela
   const f = dados.frota || {}, aloc = dados.aloc || {}, rt = dados.retrabalho;
   const abertas = dados.abertas || [], hist = dados.historico || [];
   const frenteTxt = (aloc.ativ || aloc.fr) ? `${esc(aloc.ativ)} ${esc(aloc.fr)}`.trim() : "sem frente definida";
