@@ -159,11 +159,17 @@ DEFAULT_TV_SEG = 22
 
 
 def _config():
+    # 1 query pras 4 chaves em vez de 4 db.session.get() separados — cada um é um
+    # round-trip pro pooler do Supabase, e essa função é chamada em quase todo
+    # endpoint (inclusive GET /api/os, o mais pesado).
+    valores = dict(db.session.query(Meta.chave, Meta.valor).filter(
+        Meta.chave.in_(["sla", "reincDias", "groupBy", "tvSeg"])
+    ).all())
     return {
-        "sla": float(get_meta("sla", DEFAULT_SLA)),
-        "reincDias": int(float(get_meta("reincDias", DEFAULT_REINC_DIAS))),
-        "groupBy": get_meta("groupBy", "frente"),
-        "tvSeg": int(float(get_meta("tvSeg", DEFAULT_TV_SEG))),
+        "sla": float(valores.get("sla", DEFAULT_SLA)),
+        "reincDias": int(float(valores.get("reincDias", DEFAULT_REINC_DIAS))),
+        "groupBy": valores.get("groupBy", "frente"),
+        "tvSeg": int(float(valores.get("tvSeg", DEFAULT_TV_SEG))),
     }
 
 
@@ -227,13 +233,22 @@ def api_os_list():
     cfg = _config()
     regras = _regras_customizadas()
     aloc_por_frota = {a.codigo: a for a in FrotaAlocacao.query.all()}
-    detalhes_por_os = {d.os: d for d in OsDetalhe.query.all()}
+
+    abertas = OsAberta.query.order_by(OsAberta.ab).all()
+
+    # ficha (classe, responsável, item de material etc.) só das O.S. abertas agora —
+    # pcm_os_detalhe nunca é apagada (sobrevive a O.S. que já saiu da lista), então
+    # cresce sem limite; trazer a tabela inteira aqui era o mesmo erro que já tinha
+    # sido corrigido pro histórico logo abaixo (comentário original), só que
+    # esquecido nesta consulta.
+    os_nums = [o.os for o in abertas]
+    detalhes_por_os = {d.os: d for d in OsDetalhe.query.filter(OsDetalhe.os.in_(os_nums)).all()} if os_nums else {}
 
     # só o histórico das frotas que têm O.S. aberta: reincidência, retrabalho e o
     # aviso de "sem histórico" são todos por frota e só saem daqui pras O.S. abertas.
     # Trazer a tabela inteira (dezenas de milhares de linhas) derrubava a conexão
     # do pooler no meio do SELECT e o painel voltava 500.
-    veics = [v for (v,) in db.session.query(OsAberta.veic).distinct()]
+    veics = list({o.veic for o in abertas})
     hist_rows = db.session.query(
         OsHistorico.os, OsHistorico.veic, OsHistorico.data_abertura,
         OsHistorico.horas_parada, OsHistorico.sistema, OsHistorico.problema,
@@ -252,7 +267,6 @@ def api_os_list():
         })
     frotas_com_historico = {h.veic for h in hist_rows}
 
-    abertas = OsAberta.query.order_by(OsAberta.ab).all()
     resultado = []
     for o in abertas:
         d = detalhes_por_os.get(o.os)

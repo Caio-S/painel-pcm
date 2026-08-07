@@ -447,6 +447,21 @@ def cobertura(historico, abertas):
     return {"tot": tot, "nc": nc, "pc": pc}
 
 
+def _janela_deslizante(arr, lim):
+    """arr ordenado por data + pares() de cada item computado uma única vez (não a
+    cada comparação). Gera (i, h, meus, comuns_dentro_da_janela) — comuns_dentro é o
+    intervalo arr[start:i] de itens a até `lim` de distância de h, aproveitando que
+    arr está ordenado (uma frota com centenas de O.S. ao longo de anos comparava
+    O(n²) pares mesmo quando só uma dúzia caía dentro da janela de 30-90 dias; isso
+    sozinho respondia por ~2/3 do tempo de GET /api/os com o histórico de produção)."""
+    pares_cache = [pares(h) for h in arr]
+    start = 0
+    for i, h in enumerate(arr):
+        while arr[i]["d"] - arr[start]["d"] > lim:
+            start += 1
+        yield i, h, pares_cache[i], range(start, i), pares_cache
+
+
 def repeticoes(historico, janela_dias):
     """Quais O.S. do histórico repetem um problema já visto na mesma frota dentro
     da janela, e quais problemas foram esses. Mesma regra do retrabalho — serve pra
@@ -459,12 +474,10 @@ def repeticoes(historico, janela_dias):
     marcadas = {}
     for arr in por_frota.values():
         arr = sorted(arr, key=lambda h: h["d"])
-        for i, h in enumerate(arr):
-            meus = pares(h)
+        for i, h, meus, janela, pares_cache in _janela_deslizante(arr, lim):
             comuns = set()
-            for x in arr[:i]:
-                if (h["d"] - x["d"]) <= lim:
-                    comuns |= meus & pares(x)
+            for x in janela:
+                comuns |= meus & pares_cache[x]
             if comuns:
                 marcadas[h["os"]] = [{"s": s, "p": p} for s, p in sorted(comuns)]
     return marcadas
@@ -481,13 +494,9 @@ def calcular_retrabalho(historico, janela_dias):
     for v, arr in por_frota.items():
         arr = sorted(arr, key=lambda h: h["d"])
         re_count, horas, horas_re = 0, 0.0, 0.0
-        for i, h in enumerate(arr):
+        for i, h, meus, janela, pares_cache in _janela_deslizante(arr, lim):
             horas += h.get("t") or 0
-            meus = pares(h)
-            anterior = any(
-                (meus & pares(x)) and (h["d"] - x["d"]) <= lim
-                for x in arr[:i]
-            )
+            anterior = any(meus & pares_cache[x] for x in janela)
             if anterior:
                 re_count += 1
                 horas_re += h.get("t") or 0
