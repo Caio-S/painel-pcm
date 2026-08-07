@@ -480,6 +480,8 @@ async function abrirHistoricoFrota(veic) {
       </table>
       ${hist.length ? "" : `<p style="padding:20px;text-align:center;color:var(--ink2)">Nenhum histórico carregado para esta frota ainda.</p>`}
     </div>`;
+  // período do relatório impresso volta pro padrão (todo o histórico) a cada frota nova
+  fhDe.value = ""; fhAte.value = "";
   maskFrota.classList.add("on");
 }
 fhX.onclick = fhFechar.onclick = () => maskFrota.classList.remove("on");

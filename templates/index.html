@@ -162,7 +162,14 @@
   <div class="modal" style="max-width:1180px">
     <div class="mhead"><div class="frota" id="fhFrota">—<span id="fhSub"></span></div><button class="x" id="fhX">&times;</button></div>
     <div class="mbody" id="fhBody"></div>
-    <div class="mfoot"><button class="btn btn-line" id="fhImprimir">Imprimir reincidência</button>
+    <div class="mfoot">
+      <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink2);text-transform:none;letter-spacing:0;margin:0">
+        Período do relatório
+        <input type="date" id="fhDe" title="De (em branco = desde o início)" style="width:130px">
+        <span>a</span>
+        <input type="date" id="fhAte" title="Até (em branco = até hoje)" style="width:130px">
+      </label>
+      <button class="btn btn-line" id="fhImprimir">Imprimir reincidência</button>
       <div class="grow"></div><button class="btn btn-dark" id="fhFechar">Fechar</button></div>
   </div>
 </div>

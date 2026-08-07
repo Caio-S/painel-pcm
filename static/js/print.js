@@ -57,18 +57,20 @@ function svgPizza(fatias) {
   </svg>`;
 }
 
-// colunas: um ponto por item de `pontos` ([{label, valor}]), escala pelo maior valor.
-function svgBarras(pontos) {
+// colunas: um ponto por item de `pontos` ([{label, valor}]). `maxForcado` fixa a
+// escala do eixo (disponibilidade sempre contra 100%, pra 82% não parecer "cheio"
+// igual a um mês de 100%) — sem ele, escala pelo maior valor da própria série.
+function svgBarras(pontos, maxForcado, sufixo = "", cor = "#1E4270") {
   if (!pontos.length) return _semDados();
   const L = 260, alt = 130, esq = 22, baixo = 18, w = L - esq - 6, h = alt - baixo - 8;
-  const max = Math.max(...pontos.map(p => p.valor), 1);
+  const max = maxForcado || Math.max(...pontos.map(p => p.valor), 1);
   const bw = w / pontos.length;
   const barras = pontos.map((p, i) => {
     const bh = Math.max(1, p.valor / max * h);
     const x = esq + i * bw + bw * 0.18, y = 8 + h - bh;
-    return `<rect x="${x}" y="${y}" width="${bw * 0.64}" height="${bh}" fill="#1E4270" rx="1.5"/>
+    return `<rect x="${x}" y="${y}" width="${bw * 0.64}" height="${bh}" fill="${cor}" rx="1.5"/>
       <text x="${x + bw * 0.32}" y="${8 + h + 12}" text-anchor="middle" font-size="6" fill="#5C6B7C">${esc(p.label)}</text>
-      <text x="${x + bw * 0.32}" y="${y - 3}" text-anchor="middle" font-size="6.4" font-weight="700" fill="#0E2038">${Math.round(p.valor)}</text>`;
+      <text x="${x + bw * 0.32}" y="${y - 3}" text-anchor="middle" font-size="6.4" font-weight="700" fill="#0E2038">${Math.round(p.valor)}${sufixo}</text>`;
   }).join("");
   return `<svg viewBox="0 0 ${L} ${alt}" style="width:100%;max-width:${L}px">
     <line x1="${esq}" y1="${8 + h}" x2="${L - 6}" y2="${8 + h}" stroke="#C9CFD8"/>${barras}
@@ -135,6 +137,20 @@ function imprimir() {
 }
 
 /* ============ relatório de reincidência de uma frota ============ */
+// dataIso: string ISO (data ou data+hora); de/ate: "YYYY-MM-DD" dos inputs de
+// período (em branco = sem limite naquele lado) — comparação por string funciona
+// porque os dois já vêm no formato ISO (ordena igual a comparar datas de verdade).
+function dentroPeriodo(dataIso, de, ate) {
+  if (!dataIso) return false;
+  const d = dataIso.slice(0, 10);
+  if (de && d < de) return false;
+  if (ate && d > ate) return false;
+  return true;
+}
+function diasNoMes(anoMes) {
+  const [ano, mes] = anoMes.split("-").map(Number);
+  return new Date(ano, mes, 0).getDate();
+}
 function badgeClasse(c) {
   if (!c) return "";
   const info = CONSTS.classes[c.classe] || CONSTS.classes.NAO;
@@ -156,24 +172,38 @@ function imprimirFichaFrota() {
   const d = fichaAberta;
   if (!d) { aviso("Abra o histórico de uma frota antes de imprimir."); return }
   const f = d.frota || {}, aloc = d.aloc || {}, rt = d.retrabalho;
-  const hist = d.historico || [], abertas = d.abertas || [];
+  const abertas = d.abertas || [];
+
+  // período do relatório: em branco nos dois campos = período todo (o histórico
+  // carregado inteiro), que é o padrão. Só estreita o que entra nas tabelas de
+  // reincidência e no painel executivo — o card da O.S. aberta agora é sempre
+  // mostrado, porque "agora" não é uma data do passado pra caber num período.
+  const de = v("fhDe"), ate = v("fhAte");
+  const temPeriodo = !!(de || ate);
+  const hist = (d.historico || []).filter(x => dentroPeriodo(x.d, de, ate));
   const liga = hist.filter(h => h.reAberta), repet = hist.filter(h => !h.reAberta && h.re);
-  if (!liga.length && !repet.length) { aviso("Esta frota não tem reincidência para imprimir."); return }
+  if (!liga.length && !repet.length) {
+    aviso(temPeriodo ? "Nenhuma reincidência dessa frota no período escolhido." : "Esta frota não tem reincidência para imprimir.");
+    return;
+  }
 
   // mesma regra do back-end: o export do ERP repete a categoria nas duas colunas
   const ativ = (aloc.ativ || "").trim(), fr = (aloc.fr || "").trim();
   const frente = (fr && ativ.toUpperCase().startsWith(fr.toUpperCase())
     ? ativ : `${ativ} ${fr}`.trim()) || "sem frente definida";
+  const periodoTxt = temPeriodo
+    ? (de && ate ? `${fmtd(de)} a ${fmtd(ate)}` : de ? `desde ${fmtd(de)}` : `até ${fmtd(ate)}`)
+    : "período todo";
   let h = `<div class="ph"><img src="${logoAtual()}" style="height:28px;margin-right:10px;object-fit:contain">
       <div><b>Reincidência — frota ${esc(d.codigo)}</b>
       <span>CRV Industrial · Unidade Capinópolis/MG · PCM — Planejamento e Controle de Manutenção</span></div>
-      <div class="r">Emitido ${agora().toLocaleString("pt-BR")}<br>${esc(f.m || "")} · ${esc(f.e || "")}</div></div>
+      <div class="r">Emitido ${agora().toLocaleString("pt-BR")}<br>${esc(f.m || "")} · ${esc(f.e || "")}<br>Período: ${periodoTxt}</div></div>
     <div class="psum">
       <div>Frente / atividade<b style="font-size:9pt">${esc(frente)}</b></div>
       <div>Responsável<b style="font-size:9pt">${esc(aloc.resp || "não definido")}</b></div>
-      <div>O.S. no histórico<b>${hist.length}</b></div>
-      <div>Retrabalho<b>${rt ? rt.pc + "%" : "—"}</b></div>
-      <div>Horas paradas<b>${rt ? Math.round(rt.h).toLocaleString("pt-BR") : 0}</b></div></div>`;
+      <div>O.S. no período<b>${hist.length}</b></div>
+      <div>Retrabalho (histórico completo)<b>${rt ? rt.pc + "%" : "—"}</b></div>
+      <div>Horas paradas (histórico completo)<b>${rt ? Math.round(rt.h).toLocaleString("pt-BR") : 0}</b></div></div>`;
 
   // card de destaque: é o que justifica o papel — a O.S. que está parada agora.
   abertas.forEach(o => {
@@ -223,30 +253,60 @@ function imprimirFichaFrota() {
   todos.forEach(x => { porSistema[x.s] = (porSistema[x.s] || 0) + 1 });
   const fatiasPizza = Object.entries(porSistema).sort((a, b) => b[1] - a[1]).slice(0, 6)
     .map(([s, n]) => ({ label: s, valor: n }));
-  const porMes = {};
-  todos.forEach(x => { const m = (x.d || "").slice(0, 7); if (m) porMes[m] = (porMes[m] || 0) + (x.t || 0) });
-  const barrasDados = Object.keys(porMes).sort()
-    .map(m => ({ label: m.slice(5, 7) + "/" + m.slice(2, 4), valor: porMes[m] }));
+  const porMesRepet = {};
+  todos.forEach(x => { const m = (x.d || "").slice(0, 7); if (m) porMesRepet[m] = (porMesRepet[m] || 0) + (x.t || 0) });
+  const barrasHoras = Object.keys(porMesRepet).sort()
+    .map(m => ({ label: m.slice(5, 7) + "/" + m.slice(2, 4), valor: porMesRepet[m] }));
   const totalHorasRepet = todos.reduce((s, x) => s + (x.t || 0), 0);
+
+  // disponibilidade e nº de O.S. por mês: todo o histórico do período (não só as
+  // repetições) — a O.S. aberta agora entra no mês em que abriu, contando até o
+  // momento da impressão, desde que caiba no período escolhido.
+  const statsPorMes = {};
+  const addMes = (dataIso, horasParada, osNum) => {
+    const m = (dataIso || "").slice(0, 7);
+    if (!m) return;
+    const s = statsPorMes[m] || (statsPorMes[m] = { horas: 0, os: new Set() });
+    s.horas += horasParada || 0;
+    s.os.add(osNum);
+  };
+  hist.forEach(x => addMes(x.d, x.t, x.os));
+  abertas.forEach(o => { if (dentroPeriodo(o.ab, de, ate)) addMes(o.ab, horas(agora() - new Date(o.ab)), o.os) });
+  const mesesOrdenados = Object.keys(statsPorMes).sort();
+  const barrasDisponibilidade = mesesOrdenados.map(m => {
+    const totalHorasMes = diasNoMes(m) * 24;
+    const parada = Math.min(statsPorMes[m].horas, totalHorasMes);
+    return { label: m.slice(5, 7) + "/" + m.slice(2, 4), valor: Math.max(0, 100 - parada / totalHorasMes * 100) };
+  });
+  const barrasOsPorMes = mesesOrdenados.map(m => ({ label: m.slice(5, 7) + "/" + m.slice(2, 4), valor: statsPorMes[m].os.size }));
+  const dispMedia = barrasDisponibilidade.length
+    ? Math.round(barrasDisponibilidade.reduce((s, p) => s + p.valor, 0) / barrasDisponibilidade.length) : null;
 
   h += `<div class="pexec">
     <div class="pexechead"><b>Painel executivo — frota ${esc(d.codigo)}</b>
-      <span>Resumo visual da reincidência e do retrabalho no período de ${CONFIG.reincDias} dias</span></div>
+      <span>Resumo visual do período (${periodoTxt}) — reincidência na janela de ${CONFIG.reincDias} dias</span></div>
     <div class="pkpis">
-      <div><b>${hist.length}</b><small>O.S. no histórico</small></div>
+      <div><b>${hist.length}</b><small>O.S. no período</small></div>
       <div><b>${todos.length}</b><small>Repetições no período</small></div>
-      <div><b>${Math.round(totalHorasRepet).toLocaleString("pt-BR")}h</b><small>Paradas em repetição</small></div>
-      <div><b>${rt ? rt.pc + "%" : "—"}</b><small>Retrabalho da frota</small></div>
+      <div><b>${dispMedia != null ? dispMedia + "%" : "—"}</b><small>Disponibilidade média</small></div>
+      <div><b>${rt ? rt.pc + "%" : "—"}</b><small>Retrabalho (histórico completo)</small></div>
     </div>
     <div class="pgrid">
       <div class="pgraf"><h5>Retrabalho da frota</h5>${svgGauge(rt ? rt.pc : null)}</div>
       <div class="pgraf"><h5>Sistemas mais recorrentes</h5>${svgPizza(fatiasPizza)}
         <div class="plegenda">${fatiasPizza.map((f, i) =>
           `<div><i style="background:${CORES_GRAFICO[i % CORES_GRAFICO.length]}"></i>${esc(f.label)} — ${f.valor}</div>`).join("")}</div></div>
-      <div class="pgraf"><h5>Horas paradas por mês (repetições)</h5>${svgBarras(barrasDados)}</div>
+      <div class="pgraf"><h5>Horas paradas por mês (repetições)</h5>${svgBarras(barrasHoras)}</div>
     </div>
-    <div class="pfoot">Retrabalho considera todas as O.S. corretivas da frota (mínimo 3 no histórico) — abaixo de 40% em verde,
-      de 40% a 70% em âmbar, acima de 70% em vermelho. Sistemas e horas por mês somam só as repetições listadas nas páginas anteriores.</div>
+    <div class="pgrid pgrid2">
+      <div class="pgraf"><h5>Disponibilidade da frota por mês</h5>${svgBarras(barrasDisponibilidade, 100, "%", "#1F7A5C")}</div>
+      <div class="pgraf"><h5>Nº de O.S. por mês</h5>${svgBarras(barrasOsPorMes, null, "", "#5B3E9B")}</div>
+    </div>
+    <div class="pfoot">Retrabalho considera todas as O.S. corretivas da frota (mínimo 3), sempre sobre o histórico completo —
+      abaixo de 40% em verde, de 40% a 70% em âmbar, acima de 70% em vermelho. Disponibilidade = 100% − (horas paradas no mês
+      ÷ horas do mês); a O.S. ainda aberta entra com o tempo parado até agora. O.S. cuja parada atravessa a virada do mês
+      é contada inteira no mês em que abriu. Sistemas e horas por mês (gráfico de colunas superior) somam só as repetições
+      listadas nas páginas anteriores; disponibilidade e nº de O.S. por mês somam todo o período escolhido.</div>
   </div>`;
 
   document.getElementById("print").innerHTML = h;
