@@ -318,6 +318,8 @@ table.pt td.sisp{font-weight:700;color:#16304F}
 .ptp.corretiva{background:#C6392F}.ptp.preventiva{background:#1F7A5C}
 .ptp.reforma{background:#B87A0B}.ptp.preditiva{background:#5C6B7C}
 h3.pg.alerta{background:#C6392F}
+.pnota{margin-top:9px;padding:8px 11px;background:#E7F3EE;border:1px solid #BFE0D2;border-left:3px solid #1F7A5C;
+  color:#1F7A5C;font-weight:700;font-size:8pt;border-radius:4px}
 /* painel executivo — última página, com os gráficos */
 .pexec{page-break-before:always}
 .pexechead{display:flex;align-items:baseline;gap:10px;border-bottom:2.5px solid #0E2038;padding-bottom:5px;margin-bottom:11px}
@@ -328,7 +330,7 @@ h3.pg.alerta{background:#C6392F}
 .pkpis b{display:block;font-family:var(--mono);font-size:19pt;font-weight:700;color:#0E2038}
 .pkpis small{font-size:6.8pt;letter-spacing:.05em;text-transform:uppercase;color:#5C6B7C}
 .pgrid{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:14px}
-.pgrid2{grid-template-columns:1fr 1fr;margin-top:14px}
+.pgrid4{grid-template-columns:repeat(4,1fr);margin-top:14px}
 .pgraf{border:1px solid #C9CFD8;border-top:3px solid #0E2038;border-radius:4px;padding:10px;text-align:center}
 .pgraf h5{margin:0 0 6px;font-size:7.4pt;letter-spacing:.08em;text-transform:uppercase;color:#16304F}
 .pgraf .psemdados{font-size:8pt;color:#5C6B7C;padding:32px 0}

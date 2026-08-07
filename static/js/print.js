@@ -182,8 +182,12 @@ function imprimirFichaFrota() {
   const temPeriodo = !!(de || ate);
   const hist = (d.historico || []).filter(x => dentroPeriodo(x.d, de, ate));
   const liga = hist.filter(h => h.reAberta), repet = hist.filter(h => !h.reAberta && h.re);
-  if (!liga.length && !repet.length) {
-    aviso(temPeriodo ? "Nenhuma reincidência dessa frota no período escolhido." : "Esta frota não tem reincidência para imprimir.");
+  // reincidência é só uma das seções do relatório — disponibilidade, nº de O.S.,
+  // MTBF/MTTR vêm do histórico inteiro e fazem sentido mesmo pra frota sem nenhuma
+  // reincidência (ex.: frota 60100, 46 O.S. no histórico, zero repetição). Só
+  // bloqueia se não houver histórico NENHUM pra montar o relatório.
+  if (!hist.length && !abertas.length) {
+    aviso(temPeriodo ? "Nenhum histórico dessa frota no período escolhido." : "Esta frota não tem histórico nem O.S. aberta para gerar relatório.");
     return;
   }
 
@@ -244,6 +248,11 @@ function imprimirFichaFrota() {
       problema em ${CONFIG.reincDias} dias</h3>
       <table class="pt">${cols}${cab}${repet.map(x => linha(x, false)).join("")}</table>`;
   }
+  if (!liga.length && !repet.length) {
+    h += `<div class="pnota">Nenhuma reincidência detectada nesta frota${temPeriodo ? " no período escolhido" : ""} —
+      mesma frota repetindo o mesmo par sistema/problema dentro de ${CONFIG.reincDias} dias. O restante do relatório
+      (disponibilidade, MTBF/MTTR) segue abaixo com o histórico completo.</div>`;
+  }
   h += `<div class="pfoot">Reincidência: mesma frota repetindo o mesmo par sistema/problema dentro de ${CONFIG.reincDias} dias.
     Preventiva, preditiva e reforma não entram — entram na oficina por plano, não por falha.</div>`;
 
@@ -261,17 +270,28 @@ function imprimirFichaFrota() {
 
   // disponibilidade e nº de O.S. por mês: todo o histórico do período (não só as
   // repetições) — a O.S. aberta agora entra no mês em que abriu, contando até o
-  // momento da impressão, desde que caiba no período escolhido.
-  const statsPorMes = {};
-  const addMes = (dataIso, horasParada, osNum) => {
+  // momento da impressão, desde que caiba no período escolhido. Uma segunda conta,
+  // só das corretivas, alimenta MTBF/MTTR — preventiva/preditiva/reforma não são
+  // falha, então não podem contar como "quebra" nesses dois indicadores (mesma
+  // exclusão que retrabalho/reincidência já fazem em outras partes do relatório).
+  const statsPorMes = {}, statsCorretivaPorMes = {};
+  const addMes = (mapa, dataIso, horasParada, osNum) => {
     const m = (dataIso || "").slice(0, 7);
     if (!m) return;
-    const s = statsPorMes[m] || (statsPorMes[m] = { horas: 0, os: new Set() });
+    const s = mapa[m] || (mapa[m] = { horas: 0, os: new Set() });
     s.horas += horasParada || 0;
     s.os.add(osNum);
   };
-  hist.forEach(x => addMes(x.d, x.t, x.os));
-  abertas.forEach(o => { if (dentroPeriodo(o.ab, de, ate)) addMes(o.ab, horas(agora() - new Date(o.ab)), o.os) });
+  hist.forEach(x => {
+    addMes(statsPorMes, x.d, x.t, x.os);
+    if ((x.m || "CORRETIVA").toUpperCase() === "CORRETIVA") addMes(statsCorretivaPorMes, x.d, x.t, x.os);
+  });
+  abertas.forEach(o => {
+    if (!dentroPeriodo(o.ab, de, ate)) return;
+    const horasAteAgora = horas(agora() - new Date(o.ab));
+    addMes(statsPorMes, o.ab, horasAteAgora, o.os);
+    if ((o.mt || "CORRETIVA").toUpperCase() === "CORRETIVA") addMes(statsCorretivaPorMes, o.ab, horasAteAgora, o.os);
+  });
   const mesesOrdenados = Object.keys(statsPorMes).sort();
   const barrasDisponibilidade = mesesOrdenados.map(m => {
     const totalHorasMes = diasNoMes(m) * 24;
@@ -282,6 +302,24 @@ function imprimirFichaFrota() {
   const dispMedia = barrasDisponibilidade.length
     ? Math.round(barrasDisponibilidade.reduce((s, p) => s + p.valor, 0) / barrasDisponibilidade.length) : null;
 
+  // MTTR = horas paradas em corretiva no mês ÷ nº de corretivas no mês (tempo médio
+  // de reparo). MTBF = horas em operação no mês (o resto das horas do mês) ÷ nº de
+  // corretivas (tempo médio de operação entre uma quebra e outra). Só entram meses
+  // com pelo menos uma corretiva — sem isso MTBF de um mês sem quebra nenhuma
+  // "puxaria" o gráfico pro alto sem significar nada (não é que rodou muito bem
+  // naquele mês, é que não teve corretiva pra medir contra).
+  const mesesCorretiva = Object.keys(statsCorretivaPorMes).sort();
+  const barrasMTTR = mesesCorretiva.map(m => {
+    const c = statsCorretivaPorMes[m];
+    return { label: m.slice(5, 7) + "/" + m.slice(2, 4), valor: c.horas / c.os.size };
+  });
+  const barrasMTBF = mesesCorretiva.map(m => {
+    const c = statsCorretivaPorMes[m], totalHorasMes = diasNoMes(m) * 24;
+    return { label: m.slice(5, 7) + "/" + m.slice(2, 4), valor: Math.max(0, (totalHorasMes - c.horas) / c.os.size) };
+  });
+  const media = arr => arr.length ? Math.round(arr.reduce((s, p) => s + p.valor, 0) / arr.length) : null;
+  const mtbfMedio = media(barrasMTBF), mttrMedio = media(barrasMTTR);
+
   h += `<div class="pexec">
     <div class="pexechead"><b>Painel executivo — frota ${esc(d.codigo)}</b>
       <span>Resumo visual do período (${periodoTxt}) — reincidência na janela de ${CONFIG.reincDias} dias</span></div>
@@ -290,6 +328,8 @@ function imprimirFichaFrota() {
       <div><b>${todos.length}</b><small>Repetições no período</small></div>
       <div><b>${dispMedia != null ? dispMedia + "%" : "—"}</b><small>Disponibilidade média</small></div>
       <div><b>${rt ? rt.pc + "%" : "—"}</b><small>Retrabalho (histórico completo)</small></div>
+      <div><b>${mtbfMedio != null ? mtbfMedio + "h" : "—"}</b><small>MTBF médio</small></div>
+      <div><b>${mttrMedio != null ? mttrMedio + "h" : "—"}</b><small>MTTR médio</small></div>
     </div>
     <div class="pgrid">
       <div class="pgraf"><h5>Retrabalho da frota</h5>${svgGauge(rt ? rt.pc : null)}</div>
@@ -298,15 +338,20 @@ function imprimirFichaFrota() {
           `<div><i style="background:${CORES_GRAFICO[i % CORES_GRAFICO.length]}"></i>${esc(f.label)} — ${f.valor}</div>`).join("")}</div></div>
       <div class="pgraf"><h5>Horas paradas por mês (repetições)</h5>${svgBarras(barrasHoras)}</div>
     </div>
-    <div class="pgrid pgrid2">
-      <div class="pgraf"><h5>Disponibilidade da frota por mês</h5>${svgBarras(barrasDisponibilidade, 100, "%", "#1F7A5C")}</div>
+    <div class="pgrid pgrid4">
+      <div class="pgraf"><h5>Disponibilidade por mês</h5>${svgBarras(barrasDisponibilidade, 100, "%", "#1F7A5C")}</div>
       <div class="pgraf"><h5>Nº de O.S. por mês</h5>${svgBarras(barrasOsPorMes, null, "", "#5B3E9B")}</div>
+      <div class="pgraf"><h5>MTBF por mês (corretivas)</h5>${svgBarras(barrasMTBF, null, "h", "#1E4270")}</div>
+      <div class="pgraf"><h5>MTTR por mês (corretivas)</h5>${svgBarras(barrasMTTR, null, "h", "#B87A0B")}</div>
     </div>
     <div class="pfoot">Retrabalho considera todas as O.S. corretivas da frota (mínimo 3), sempre sobre o histórico completo —
       abaixo de 40% em verde, de 40% a 70% em âmbar, acima de 70% em vermelho. Disponibilidade = 100% − (horas paradas no mês
-      ÷ horas do mês); a O.S. ainda aberta entra com o tempo parado até agora. O.S. cuja parada atravessa a virada do mês
-      é contada inteira no mês em que abriu. Sistemas e horas por mês (gráfico de colunas superior) somam só as repetições
-      listadas nas páginas anteriores; disponibilidade e nº de O.S. por mês somam todo o período escolhido.</div>
+      ÷ horas do mês); a O.S. ainda aberta entra com o tempo parado até agora. MTBF (tempo médio entre falhas) = horas em
+      operação no mês ÷ nº de corretivas; MTTR (tempo médio de reparo) = horas paradas em corretiva no mês ÷ nº de corretivas
+      — os dois só contam O.S. corretiva (preventiva/preditiva/reforma não são falha) e só entram meses com pelo menos uma.
+      O.S. cuja parada atravessa a virada do mês é contada inteira no mês em que abriu. Sistemas e horas por mês (gráfico de
+      colunas superior) somam só as repetições listadas nas páginas anteriores; os 4 gráficos de baixo somam todo o período
+      escolhido.</div>
   </div>`;
 
   document.getElementById("print").innerHTML = h;
