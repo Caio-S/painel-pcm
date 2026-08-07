@@ -289,6 +289,51 @@ table.pt tr.late td{background:#FDECEA}
 table.pt td.num{font-family:var(--mono);white-space:nowrap}
 table.pt td.late{color:#C6392F;font-weight:700}
 .pfoot{margin-top:8px;font-size:7pt;color:#5C6B7C;border-top:1px solid #C9CFD8;padding-top:4px}
+/* relatório de reincidência da frota — card de destaque da O.S. aberta agora */
+.pcard{border:1.5px solid #0E2038;border-left:7px solid #C6392F;border-radius:4px;padding:9px 13px;
+  margin-top:9px;background:#FFF8F7;display:flex;gap:16px;align-items:center}
+.pcard .pfrota{font-family:var(--mono);font-size:21pt;font-weight:700;color:#0E2038;line-height:1;white-space:nowrap}
+.pcard .pfrota small{display:block;font-family:var(--sans);font-size:6.6pt;font-weight:700;letter-spacing:.07em;
+  text-transform:uppercase;color:#5C6B7C;margin-top:4px;white-space:normal}
+.pcard .pmid{flex:1;min-width:0}
+.pcard .plabel{font-size:7.5pt;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#C6392F}
+.pcard .pprob{font-size:9pt;line-height:1.5;margin-top:3px;word-wrap:break-word}
+.pcard .pprob i{color:#5C6B7C}
+.pcard .ptempo{font-family:var(--mono);font-size:15pt;font-weight:700;color:#C6392F;white-space:nowrap;text-align:right}
+.pcard .ptempo small{display:block;font-family:var(--sans);font-size:6.4pt;font-weight:700;letter-spacing:.07em;
+  text-transform:uppercase;color:#5C6B7C;margin-top:3px}
+.pchips{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.pchip{font-size:6.8pt;font-weight:700;padding:2px 6px;border-radius:3px;background:#EDF1F6;color:#16304F;border:.5px solid #C9CFD8}
+.pchip.re{background:#FDECEA;color:#C6392F;border-color:#EFC0BB}
+.pbadge{display:inline-block;font-size:6.8pt;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+  padding:2px 7px;border-radius:3px;color:#fff;margin-left:6px}
+.pbadge.mat{background:#B87A0B}.pbadge.mao{background:#5B3E9B}.pbadge.diag{background:#C6392F}
+.pbadge.exec{background:#1F7A5C}.pbadge.ext{background:#5C6B7C}.pbadge.none{background:#8A97A6}
+/* tabelas de reincidência: sistema/problema em destaque, tipo colorido, linha da
+   O.S. em aberto tintada */
+table.pt tr.match td{background:#FFF6F5}
+table.pt td.sisp{font-weight:700;color:#16304F}
+.ptp{display:inline-block;font-size:6.2pt;font-weight:800;letter-spacing:.03em;text-transform:uppercase;
+  padding:1.5px 5px;border-radius:2px;color:#fff;white-space:nowrap}
+.ptp.corretiva{background:#C6392F}.ptp.preventiva{background:#1F7A5C}
+.ptp.reforma{background:#B87A0B}.ptp.preditiva{background:#5C6B7C}
+h3.pg.alerta{background:#C6392F}
+/* painel executivo — última página, com os gráficos */
+.pexec{page-break-before:always}
+.pexechead{display:flex;align-items:baseline;gap:10px;border-bottom:2.5px solid #0E2038;padding-bottom:5px;margin-bottom:11px}
+.pexechead b{font-size:13pt;letter-spacing:.08em;text-transform:uppercase;color:#0E2038}
+.pexechead span{font-size:8pt;color:#5C6B7C}
+.pkpis{display:flex;gap:10px;margin-bottom:14px}
+.pkpis div{flex:1;border:1px solid #C9CFD8;border-top:3px solid #0E2038;border-radius:4px;padding:8px 10px;text-align:center}
+.pkpis b{display:block;font-family:var(--mono);font-size:19pt;font-weight:700;color:#0E2038}
+.pkpis small{font-size:6.8pt;letter-spacing:.05em;text-transform:uppercase;color:#5C6B7C}
+.pgrid{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:14px}
+.pgraf{border:1px solid #C9CFD8;border-top:3px solid #0E2038;border-radius:4px;padding:10px;text-align:center}
+.pgraf h5{margin:0 0 6px;font-size:7.4pt;letter-spacing:.08em;text-transform:uppercase;color:#16304F}
+.pgraf .psemdados{font-size:8pt;color:#5C6B7C;padding:32px 0}
+.plegenda{text-align:left;margin-top:8px;font-size:7pt}
+.plegenda div{display:flex;align-items:center;gap:5px;margin-bottom:2px}
+.plegenda i{width:8px;height:8px;border-radius:2px;flex:none}
 /* alocação */
 .alocbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
 .alocbar select,.alocbar input{border:1px solid var(--line);border-radius:4px;padding:7px 8px;background:#fff}

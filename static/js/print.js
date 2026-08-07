@@ -16,6 +16,65 @@ function retrabalhoPorFrota() {
   return RT;
 }
 
+/* ============ gráficos SVG (impressão — sem lib externa) ============ */
+const CORES_GRAFICO = ["#1E4270", "#C6392F", "#B87A0B", "#1F7A5C", "#5B3E9B", "#C9A227", "#8A97A6"];
+const _semDados = () => '<div class="psemdados">sem dados suficientes</div>';
+
+// velocímetro: semicírculo de 0% (esquerda) a 100% (direita), agulha e valor no centro.
+function svgGauge(pct) {
+  if (pct == null) return _semDados();
+  const p = Math.max(0, Math.min(100, pct));
+  const cor = p >= 70 ? "#C6392F" : p >= 40 ? "#B87A0B" : "#1F7A5C";
+  const L = 190, r = 78, cx = L / 2, cy = 96;
+  const pt = ang => { const rad = (ang - 180) * Math.PI / 180; return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) } };
+  const p0 = pt(0), p1 = pt(180), pv = pt(p / 100 * 180);
+  const large = p / 100 * 180 > 180 ? 1 : 0;
+  return `<svg viewBox="0 0 ${L} 112" style="width:100%;max-width:${L}px">
+    <path d="M${p0.x},${p0.y} A${r},${r} 0 1 1 ${p1.x},${p1.y}" fill="none" stroke="#E3E9EF" stroke-width="16" stroke-linecap="round"/>
+    <path d="M${p0.x},${p0.y} A${r},${r} 0 ${large} 1 ${pv.x},${pv.y}" fill="none" stroke="${cor}" stroke-width="16" stroke-linecap="round"/>
+    <text x="${cx}" y="${cy - 8}" text-anchor="middle" font-family="var(--mono)" font-size="24" font-weight="700" fill="${cor}">${Math.round(p)}%</text>
+    <text x="${cx}" y="${cy + 11}" text-anchor="middle" font-size="7.5" letter-spacing="1" fill="#5C6B7C">RETRABALHO</text>
+  </svg>`;
+}
+
+// rosca: uma fatia por item de `fatias` ([{label, valor}]), cor cíclica pela paleta do app.
+function svgPizza(fatias) {
+  const total = fatias.reduce((s, f) => s + f.valor, 0);
+  if (!total) return _semDados();
+  const L = 150, r = 56, cx = L / 2, cy = L / 2, circ = 2 * Math.PI * r;
+  let acumulado = 0;
+  const arcos = fatias.map((f, i) => {
+    const len = f.valor / total * circ;
+    const seg = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${CORES_GRAFICO[i % CORES_GRAFICO.length]}"
+      stroke-width="24" stroke-dasharray="${len} ${circ - len}" stroke-dashoffset="${-acumulado}"
+      transform="rotate(-90 ${cx} ${cy})"/>`;
+    acumulado += len;
+    return seg;
+  }).join("");
+  return `<svg viewBox="0 0 ${L} ${L}" style="width:100%;max-width:${L}px">${arcos}
+    <text x="${cx}" y="${cy - 3}" text-anchor="middle" font-family="var(--mono)" font-size="17" font-weight="700" fill="#0E2038">${total}</text>
+    <text x="${cx}" y="${cy + 11}" text-anchor="middle" font-size="6.6" letter-spacing="1" fill="#5C6B7C">OCORRÊNCIAS</text>
+  </svg>`;
+}
+
+// colunas: um ponto por item de `pontos` ([{label, valor}]), escala pelo maior valor.
+function svgBarras(pontos) {
+  if (!pontos.length) return _semDados();
+  const L = 260, alt = 130, esq = 22, baixo = 18, w = L - esq - 6, h = alt - baixo - 8;
+  const max = Math.max(...pontos.map(p => p.valor), 1);
+  const bw = w / pontos.length;
+  const barras = pontos.map((p, i) => {
+    const bh = Math.max(1, p.valor / max * h);
+    const x = esq + i * bw + bw * 0.18, y = 8 + h - bh;
+    return `<rect x="${x}" y="${y}" width="${bw * 0.64}" height="${bh}" fill="#1E4270" rx="1.5"/>
+      <text x="${x + bw * 0.32}" y="${8 + h + 12}" text-anchor="middle" font-size="6" fill="#5C6B7C">${esc(p.label)}</text>
+      <text x="${x + bw * 0.32}" y="${y - 3}" text-anchor="middle" font-size="6.4" font-weight="700" fill="#0E2038">${Math.round(p.valor)}</text>`;
+  }).join("");
+  return `<svg viewBox="0 0 ${L} ${alt}" style="width:100%;max-width:${L}px">
+    <line x1="${esq}" y1="${8 + h}" x2="${L - 6}" y2="${8 + h}" stroke="#C9CFD8"/>${barras}
+  </svg>`;
+}
+
 /* ============ lista para PDF ============ */
 function imprimir() {
   const l = filtrar(), ab = l.filter(o => o.aberta), al = ab.filter(vencida);
@@ -76,8 +135,23 @@ function imprimir() {
 }
 
 /* ============ relatório de reincidência de uma frota ============ */
+function badgeClasse(c) {
+  if (!c) return "";
+  const info = CONSTS.classes[c.classe] || CONSTS.classes.NAO;
+  return `<span class="pbadge ${info.cls}">${esc(info.lbl)}</span>`;
+}
+function chipsImpressao(itensC, paresFortes) {
+  if (!itensC || !itensC.length) return "";
+  const fortes = new Set((paresFortes || []).map(p => p.s + "|" + p.p));
+  return `<div class="pchips">${itensC.map(i =>
+    `<span class="pchip${fortes.has(i.s + "|" + i.p) ? " re" : ""}">${esc(i.s)} · ${esc(i.p)}</span>`
+  ).join("")}</div>`;
+}
+
 /* imprime a ficha aberta: a O.S. de agora, o que ela repete e o histórico ao
-   redor — é o documento que acompanha a cobrança ao responsável. */
+   redor — é o documento que acompanha a cobrança ao responsável. Termina numa
+   página de painel executivo (velocímetro de retrabalho, pizza dos sistemas
+   mais recorrentes, colunas de horas paradas por mês) pra quem só olha o resumo. */
 function imprimirFichaFrota() {
   const d = fichaAberta;
   if (!d) { aviso("Abra o histórico de uma frota antes de imprimir."); return }
@@ -91,7 +165,7 @@ function imprimirFichaFrota() {
   const frente = (fr && ativ.toUpperCase().startsWith(fr.toUpperCase())
     ? ativ : `${ativ} ${fr}`.trim()) || "sem frente definida";
   let h = `<div class="ph"><img src="${logoAtual()}" style="height:28px;margin-right:10px;object-fit:contain">
-      <div><b>Reincidência — frota ${d.codigo}</b>
+      <div><b>Reincidência — frota ${esc(d.codigo)}</b>
       <span>CRV Industrial · Unidade Capinópolis/MG · PCM — Planejamento e Controle de Manutenção</span></div>
       <div class="r">Emitido ${agora().toLocaleString("pt-BR")}<br>${esc(f.m || "")} · ${esc(f.e || "")}</div></div>
     <div class="psum">
@@ -101,44 +175,80 @@ function imprimirFichaFrota() {
       <div>Retrabalho<b>${rt ? rt.pc + "%" : "—"}</b></div>
       <div>Horas paradas<b>${rt ? Math.round(rt.h).toLocaleString("pt-BR") : 0}</b></div></div>`;
 
+  // card de destaque: é o que justifica o papel — a O.S. que está parada agora.
   abertas.forEach(o => {
     const c = OS_LIST.find(x => x.os === o.os);
-    h += `<h3 class="pg">O.S. aberta agora — ${o.os}</h3>
-      <table class="pt"><colgroup><col style="width:13%"><col style="width:13%"><col style="width:12%"><col style="width:62%"></colgroup>
-      <tr><th>Aberta em</th><th>Parada há</th><th>Pendência</th><th>Problema relatado</th></tr>
-      <tr><td class="num">${fmtPt(o.ab)}</td><td class="num">${dur(agora() - new Date(o.ab))}</td>
-        <td>${c ? CONSTS.classes[c.classe].lbl : "—"}</td>
-        <td>${esc(o.prob || "—")}${c && c.detalhe ? "<br><i>" + esc(c.detalhe) + "</i>" : ""}</td></tr></table>`;
-    if (c && c.itensC && c.itensC.length) {
-      h += `<table class="pt" style="margin-top:4px"><colgroup><col style="width:26%"><col style="width:74%"></colgroup>
-        <tr><th>Problema classificado</th><th>Trecho da descrição</th></tr>
-        ${c.itensC.map(i => `<tr><td>${esc(i.s)} · ${esc(i.p)}</td><td>${esc(i.x || "")}</td></tr>`).join("")}</table>`;
-    }
+    h += `<div class="pcard">
+      <div class="pfrota">${esc(d.codigo)}<small>${esc(f.m || f.e || "")}</small></div>
+      <div class="pmid">
+        <span class="plabel">O.S. ${esc(o.os)} — ABERTA AGORA</span>${badgeClasse(c)}
+        <div class="pprob">${esc(o.prob || "—")}${c && c.detalhe ? "<br><i>" + esc(c.detalhe) + "</i>" : ""}</div>
+        ${c ? chipsImpressao(c.itensC, c.reinc ? c.reinc.pares : []) : ""}
+      </div>
+      <div class="ptempo">${dur(agora() - new Date(o.ab))}<small>parada desde ${fmtPt(o.ab)}</small></div>
+    </div>`;
   });
 
-  const cols = `<colgroup><col style="width:8%"><col style="width:13%"><col style="width:13%"><col style="width:7%">
-    <col style="width:6%"><col style="width:9%"><col style="width:19%"><col style="width:25%"></colgroup>`;
-  const cab = `<tr><th>Nº O.S.</th><th>Data hora / parada</th><th>Data hora / liberação</th><th>Horas P</th>
-    <th>Dias</th><th>Tipo</th><th>Sistema / problema</th><th>Descrição do problema</th></tr>`;
-  const linha = x => {
+  const cols = `<colgroup><col style="width:6%"><col style="width:9%"><col style="width:16%">
+    <col style="width:35%"><col style="width:22%"><col style="width:12%"></colgroup>`;
+  const cab = `<tr><th>O.S.</th><th>Tipo</th><th>Sistema / problema</th><th>Descrição do problema</th>
+    <th>Período (parada → liberação)</th><th>Duração</th></tr>`;
+  const linha = (x, destacar) => {
     const par = (x.reAberta || x.re || []).map(p => esc(p.s) + " · " + esc(p.p)).join("<br>")
       || (esc(x.s) + " · " + esc(x.p));
-    return `<tr><td class="num">${esc(x.os)}</td><td class="num">${fmtPt(x.d)}</td>
-      <td class="num">${x.lib ? fmtPt(x.lib) : "em aberto"}</td><td class="num">${hm(x.t)}</td>
-      <td class="num">${dias(x.t)}</td><td>${esc(x.m || "—")}</td><td>${par}</td>
-      <td>${esc(x.x || "")}</td></tr>`;
+    const tipo = (x.m || "CORRETIVA").toLowerCase();
+    return `<tr class="${destacar ? "match" : ""}">
+      <td class="num">${esc(x.os)}</td>
+      <td><span class="ptp ${esc(tipo)}">${esc(x.m || "corretiva")}</span></td>
+      <td class="sisp">${par}</td>
+      <td>${esc(x.x || "")}</td>
+      <td class="num">${fmtPt(x.d)} →<br>${x.lib ? fmtPt(x.lib) : "em aberto"}</td>
+      <td class="num">${hm(x.t)}<br>(${dias(x.t)}d)</td></tr>`;
   };
   if (liga.length) {
-    h += `<h3 class="pg">${liga.length} O.S. com o mesmo problema da O.S. aberta agora</h3>
-      <table class="pt">${cols}${cab}${liga.map(linha).join("")}</table>`;
+    h += `<h3 class="pg alerta">${liga.length} O.S. com o mesmo problema da O.S. aberta agora</h3>
+      <table class="pt">${cols}${cab}${liga.map(x => linha(x, true)).join("")}</table>`;
   }
   if (repet.length) {
     h += `<h3 class="pg">${repet.length === 1 ? "Outra O.S. que repetiu" : "Outras " + repet.length + " O.S. que repetiram"}
       problema em ${CONFIG.reincDias} dias</h3>
-      <table class="pt">${cols}${cab}${repet.map(linha).join("")}</table>`;
+      <table class="pt">${cols}${cab}${repet.map(x => linha(x, false)).join("")}</table>`;
   }
   h += `<div class="pfoot">Reincidência: mesma frota repetindo o mesmo par sistema/problema dentro de ${CONFIG.reincDias} dias.
     Preventiva, preditiva e reforma não entram — entram na oficina por plano, não por falha.</div>`;
+
+  // painel executivo — última página, resumo visual de tudo acima.
+  const todos = [...liga, ...repet];
+  const porSistema = {};
+  todos.forEach(x => { porSistema[x.s] = (porSistema[x.s] || 0) + 1 });
+  const fatiasPizza = Object.entries(porSistema).sort((a, b) => b[1] - a[1]).slice(0, 6)
+    .map(([s, n]) => ({ label: s, valor: n }));
+  const porMes = {};
+  todos.forEach(x => { const m = (x.d || "").slice(0, 7); if (m) porMes[m] = (porMes[m] || 0) + (x.t || 0) });
+  const barrasDados = Object.keys(porMes).sort()
+    .map(m => ({ label: m.slice(5, 7) + "/" + m.slice(2, 4), valor: porMes[m] }));
+  const totalHorasRepet = todos.reduce((s, x) => s + (x.t || 0), 0);
+
+  h += `<div class="pexec">
+    <div class="pexechead"><b>Painel executivo — frota ${esc(d.codigo)}</b>
+      <span>Resumo visual da reincidência e do retrabalho no período de ${CONFIG.reincDias} dias</span></div>
+    <div class="pkpis">
+      <div><b>${hist.length}</b><small>O.S. no histórico</small></div>
+      <div><b>${todos.length}</b><small>Repetições no período</small></div>
+      <div><b>${Math.round(totalHorasRepet).toLocaleString("pt-BR")}h</b><small>Paradas em repetição</small></div>
+      <div><b>${rt ? rt.pc + "%" : "—"}</b><small>Retrabalho da frota</small></div>
+    </div>
+    <div class="pgrid">
+      <div class="pgraf"><h5>Retrabalho da frota</h5>${svgGauge(rt ? rt.pc : null)}</div>
+      <div class="pgraf"><h5>Sistemas mais recorrentes</h5>${svgPizza(fatiasPizza)}
+        <div class="plegenda">${fatiasPizza.map((f, i) =>
+          `<div><i style="background:${CORES_GRAFICO[i % CORES_GRAFICO.length]}"></i>${esc(f.label)} — ${f.valor}</div>`).join("")}</div></div>
+      <div class="pgraf"><h5>Horas paradas por mês (repetições)</h5>${svgBarras(barrasDados)}</div>
+    </div>
+    <div class="pfoot">Retrabalho considera todas as O.S. corretivas da frota (mínimo 3 no histórico) — abaixo de 40% em verde,
+      de 40% a 70% em âmbar, acima de 70% em vermelho. Sistemas e horas por mês somam só as repetições listadas nas páginas anteriores.</div>
+  </div>`;
+
   document.getElementById("print").innerHTML = h;
   window.print();
 }
