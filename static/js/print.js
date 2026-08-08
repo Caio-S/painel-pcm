@@ -227,9 +227,14 @@ function imprimirFichaFrota() {
     <col style="width:35%"><col style="width:22%"><col style="width:12%"></colgroup>`;
   const cab = `<tr><th>O.S.</th><th>Tipo</th><th>Sistema / problema</th><th>Descrição do problema</th>
     <th>Período (parada → liberação)</th><th>Duração</th></tr>`;
-  const linha = (x, destacar) => {
-    const par = (x.reAberta || x.re || []).map(p => esc(p.s) + " · " + esc(p.p)).join("<br>")
-      || (esc(x.s) + " · " + esc(x.p));
+  const cabSis = cab.replace("<th>Sistema / problema</th>", "<th>Problema</th>");
+  const linha = (x, destacar, sis) => {
+    const pares = x.reAberta || x.re || [{ s: x.s, p: x.p }];
+    // dentro do bloco de um sistema a coluna mostra só o problema: o sistema já
+    // está no título e repeti-lo em toda linha come a largura da descrição.
+    const par = sis
+      ? pares.filter(p => p.s === sis).map(p => esc(p.p)).join("<br>")
+      : pares.map(p => esc(p.s) + " · " + esc(p.p)).join("<br>");
     const tipo = (x.m || "CORRETIVA").toLowerCase();
     return `<tr class="${destacar ? "match" : ""}">
       <td class="num">${esc(x.os)}</td>
@@ -239,14 +244,29 @@ function imprimirFichaFrota() {
       <td class="num">${fmtPt(x.d)} →<br>${x.lib ? fmtPt(x.lib) : "em aberto"}</td>
       <td class="num">${hm(x.t)}<br>(${dias(x.t)}d)</td></tr>`;
   };
+  /* uma O.S. entra no bloco de cada sistema que ela repetiu — a descrição junta
+     vários problemas, e a pergunta "quanto esta frota voltou por direção" só fecha
+     se a parada dela contar naquele sistema também. */
+  const blocosPorSistema = (arr, destacar) => {
+    const g = {};
+    arr.forEach(x => (x.reAberta || x.re || [{ s: x.s, p: x.p }])
+      .forEach(p => (g[p.s] = g[p.s] || []).push(x)));
+    // sistema que mais repetiu primeiro: é por onde a conversa com a oficina começa
+    return Object.keys(g).sort((a, b) => g[b].length - g[a].length || a.localeCompare(b))
+      .map(sis => {
+        const itens = g[sis].sort((a, b) => new Date(b.d) - new Date(a.d));
+        const hs = itens.reduce((s, x) => s + (x.t || 0), 0);
+        return `<h4 class="pm">${esc(sis)} — ${itens.length} O.S. · ${hm(hs)} paradas</h4>
+          <table class="pt">${cols}${cabSis}${itens.map(x => linha(x, destacar, sis)).join("")}</table>`;
+      }).join("");
+  };
   if (liga.length) {
     h += `<h3 class="pg alerta">${liga.length} O.S. com o mesmo problema da O.S. aberta agora</h3>
-      <table class="pt">${cols}${cab}${liga.map(x => linha(x, true)).join("")}</table>`;
+      ${blocosPorSistema(liga, true)}`;
   }
   if (repet.length) {
     h += `<h3 class="pg">${repet.length === 1 ? "Outra O.S. que repetiu" : "Outras " + repet.length + " O.S. que repetiram"}
-      problema em ${CONFIG.reincDias} dias</h3>
-      <table class="pt">${cols}${cab}${repet.map(x => linha(x, false)).join("")}</table>`;
+      problema em ${CONFIG.reincDias} dias</h3>${blocosPorSistema(repet, false)}`;
   }
   if (!liga.length && !repet.length) {
     // sem nenhuma reincidência não sobrava tabela de O.S. nenhuma — só a nota e
