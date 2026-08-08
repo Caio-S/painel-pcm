@@ -430,27 +430,46 @@ function linhasHistorico(hist) {
   const liga = hist.filter(h => h.reAberta);
   const re = hist.filter(h => !h.reAberta && h.re);
   const resto = hist.filter(h => !h.reAberta && !h.re);
-  // na parte de cima mostra o problema que REPETIU, não o principal da O.S. —
-  // senão uma O.S. que voltou pelo motor aparecia rotulada como "preventiva",
-  // que é só o primeiro item da descrição.
-  const cel = h => (h.reAberta || h.re)
-    ? (h.reAberta || h.re).map(p => `<b>${esc(p.s)}</b><br><span style="font-size:10.5px;color:var(--ink2)">${esc(p.p)}</span>`).join("<br>")
-    : `${esc(h.s) || "—"}<br><span style="font-size:10.5px;color:var(--ink2)">${esc(h.p) || ""}</span>`;
   const tipo = m => m ? `<span class="tp-${esc(m).toLowerCase()}">${esc(m)}</span>` : "—";
-  const linha = h => `<tr class="${h.reAberta ? "h-liga" : h.re ? "h-re" : ""}">
-    <td class="n">${esc(h.os)}</td>
-    <td class="n">${fmt(h.d)}</td>
-    <td class="n">${h.lib ? fmt(h.lib) : "em aberto"}</td>
-    <td class="n">${hm(h.t)}</td>
-    <td class="n">${dias(h.t)}</td>
-    <td>${tipo(h.m)}</td>
-    <td>${cel(h)}</td>
-    <td style="font-size:11.5px">${esc((h.x || "").slice(0, 140))}</td></tr>`;
+  // dentro de um bloco de sistema a coluna mostra só o problema (sis passado) —
+  // o sistema já está no cabeçalho do bloco, repeti-lo em toda linha é redundante.
+  // Fora de bloco (demais O.S., sem reincidência) mostra sistema + problema.
+  const linha = (h, sis) => {
+    const pares = h.reAberta || h.re;
+    const cel = pares
+      ? (sis ? pares.filter(p => p.s === sis).map(p => esc(p.p)).join("<br>")
+             : pares.map(p => `<b>${esc(p.s)}</b><br><span style="font-size:10.5px;color:var(--ink2)">${esc(p.p)}</span>`).join("<br>"))
+      : `${esc(h.s) || "—"}<br><span style="font-size:10.5px;color:var(--ink2)">${esc(h.p) || ""}</span>`;
+    return `<tr class="${h.reAberta ? "h-liga" : h.re ? "h-re" : ""}">
+      <td class="n">${esc(h.os)}</td>
+      <td class="n">${fmt(h.d)}</td>
+      <td class="n">${h.lib ? fmt(h.lib) : "em aberto"}</td>
+      <td class="n">${hm(h.t)}</td>
+      <td class="n">${dias(h.t)}</td>
+      <td>${tipo(h.m)}</td>
+      <td>${cel}</td>
+      <td style="font-size:11.5px">${esc((h.x || "").slice(0, 140))}</td></tr>`;
+  };
   const div = (txt, cls) => `<tr class="h-div ${cls}"><td colspan="8">${txt}</td></tr>`;
-  if (!liga.length && !re.length) return hist.map(linha).join("");
-  return (liga.length ? div(`${liga.length} O.S. com o mesmo problema da O.S. aberta agora`, "liga") + liga.map(linha).join("") : "")
-    + (re.length ? div(`outras ${re.length} O.S. que repetiram problema em ${CONFIG.reincDias} dias`, "re") + re.map(linha).join("") : "")
-    + (resto.length ? div(`demais ${resto.length} O.S. do histórico`, "") + resto.map(linha).join("") : "");
+  // agrupa liga/re por sistema — mesma quebra do relatório impresso: todas as
+  // vezes que a frota voltou por um sistema juntas, do que mais repetiu pro que
+  // menos, e dentro do bloco por data (mais recente primeiro). Uma O.S. que
+  // repetiu em mais de um sistema aparece em cada bloco relevante.
+  const blocosPorSistema = arr => {
+    const g = {};
+    arr.forEach(h => (h.reAberta || h.re).forEach(p => (g[p.s] = g[p.s] || []).push(h)));
+    return Object.keys(g).sort((a, b) => g[b].length - g[a].length || a.localeCompare(b))
+      .map(sis => {
+        const itens = g[sis].slice().sort((a, b) => new Date(b.d) - new Date(a.d));
+        const hs = itens.reduce((s, h) => s + (h.t || 0), 0);
+        return `<tr class="h-sis"><td colspan="8">${esc(sis)} — ${itens.length} O.S. · ${hm(hs)} paradas</td></tr>`
+          + itens.map(h => linha(h, sis)).join("");
+      }).join("");
+  };
+  if (!liga.length && !re.length) return hist.map(h => linha(h)).join("");
+  return (liga.length ? div(`${liga.length} O.S. com o mesmo problema da O.S. aberta agora`, "liga") + blocosPorSistema(liga) : "")
+    + (re.length ? div(`outras ${re.length} O.S. que repetiram problema em ${CONFIG.reincDias} dias`, "re") + blocosPorSistema(re) : "")
+    + (resto.length ? div(`demais ${resto.length} O.S. do histórico`, "") + resto.map(h => linha(h)).join("") : "");
 }
 
 async function abrirHistoricoFrota(veic) {
