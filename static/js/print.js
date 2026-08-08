@@ -249,9 +249,18 @@ function imprimirFichaFrota() {
       <table class="pt">${cols}${cab}${repet.map(x => linha(x, false)).join("")}</table>`;
   }
   if (!liga.length && !repet.length) {
+    // sem nenhuma reincidência não sobrava tabela de O.S. nenhuma — só a nota e
+    // direto pro painel executivo, o que parecia "relatório em branco" (usuário
+    // reportou). Lista o histórico do período inteiro aqui, mais recente primeiro,
+    // pra sempre ter alguma listagem de O.S. na página mesmo sem repetição.
     h += `<div class="pnota">Nenhuma reincidência detectada nesta frota${temPeriodo ? " no período escolhido" : ""} —
-      mesma frota repetindo o mesmo par sistema/problema dentro de ${CONFIG.reincDias} dias. O restante do relatório
-      (disponibilidade, MTBF/MTTR) segue abaixo com o histórico completo.</div>`;
+      mesma frota repetindo o mesmo par sistema/problema dentro de ${CONFIG.reincDias} dias. Segue o histórico completo
+      do período; o painel executivo (disponibilidade, MTBF/MTTR) vem ao final.</div>`;
+    if (hist.length) {
+      const histOrdenado = hist.slice().sort((a, b) => new Date(b.d) - new Date(a.d));
+      h += `<h3 class="pg">${hist.length} O.S. no período</h3>
+        <table class="pt">${cols}${cab}${histOrdenado.map(x => linha(x, false)).join("")}</table>`;
+    }
   }
   h += `<div class="pfoot">Reincidência: mesma frota repetindo o mesmo par sistema/problema dentro de ${CONFIG.reincDias} dias.
     Preventiva, preditiva e reforma não entram — entram na oficina por plano, não por falha.</div>`;
