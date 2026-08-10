@@ -358,10 +358,10 @@ function imprimirFichaFrota() {
   const fimEfetivo = fimPeriodo < agora() ? fimPeriodo : agora();
   const inicioPeriodo = de ? new Date(de + "T00:00:00") : null;
   const statsPorMes = {}, statsCorretivaPorMes = {};
-  const addMes = (mapa, mesChave, horasParada, osNum) => {
+  const addMes = (mapa, mesChave, horasParada, osNums) => {
     const s = mapa[mesChave] || (mapa[mesChave] = { horas: 0, os: new Set() });
     s.horas += horasParada || 0;
-    s.os.add(osNum);
+    osNums.forEach(n => s.os.add(n));
   };
   // terceiro achado, mesmo método (comparando com o CHB, frota 60907: maio
   // isolado deu 75,86% lá, 70% aqui, mesmo já corrigido o resto): uma O.S. que
@@ -371,7 +371,7 @@ function imprimirFichaFrota() {
   // pedaço de junho ficaria de fora e maio ficaria "pesado" demais. distribuirPorMes
   // fatia o intervalo [início, fim] já cortado pelo período em pedaços por mês
   // corrente, e cada mês só leva a fatia que realmente é dele.
-  const distribuirPorMes = (mapa, inicio, fim, osNum) => {
+  const distribuirPorMes = (mapa, inicio, fim, osNums) => {
     let cursor = new Date(inicio.getFullYear(), inicio.getMonth(), 1);
     while (cursor < fim) {
       const proximoMes = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
@@ -379,7 +379,7 @@ function imprimirFichaFrota() {
       const fimSeg = proximoMes < fim ? proximoMes : fim;
       const horasSeg = (fimSeg - inicioSeg) / 3600000;
       if (horasSeg > 0) {
-        addMes(mapa, cursor.getFullYear() + "-" + String(cursor.getMonth() + 1).padStart(2, "0"), horasSeg, osNum);
+        addMes(mapa, cursor.getFullYear() + "-" + String(cursor.getMonth() + 1).padStart(2, "0"), horasSeg, osNums);
       }
       cursor = proximoMes;
     }
@@ -391,6 +391,7 @@ function imprimirFichaFrota() {
   // dentro do período mas só fecharam depois do "até" entravam com a duração
   // INTEIRA, passando do fim. As duas contam certo usando a SOBREPOSIÇÃO do
   // intervalo [abertura, liberação] da O.S. com o período, não só onde ela abriu.
+  const intervalosClipados = [];
   (d.historico || []).forEach(x => {
     if (!x.d) return;
     const abre = new Date(x.d), fecha = x.lib ? new Date(x.lib) : fimEfetivo;
@@ -399,17 +400,41 @@ function imprimirFichaFrota() {
     const inicioClip = inicioPeriodo && inicioPeriodo > abre ? inicioPeriodo : abre;
     const fimClip = fecha > fimEfetivo ? fimEfetivo : fecha;
     if (fimClip <= inicioClip) return;
-    distribuirPorMes(statsPorMes, inicioClip, fimClip, x.os);
-    if ((x.m || "CORRETIVA").toUpperCase() === "CORRETIVA") distribuirPorMes(statsCorretivaPorMes, inicioClip, fimClip, x.os);
+    intervalosClipados.push({ inicio: inicioClip, fim: fimClip, os: x.os });
+    // MTBF/MTTR usam a duração de CADA corretiva por si (o que interessa é quanto
+    // tempo aquele reparo específico levou) — não passam pela mesclagem abaixo.
+    if ((x.m || "CORRETIVA").toUpperCase() === "CORRETIVA") distribuirPorMes(statsCorretivaPorMes, inicioClip, fimClip, [x.os]);
   });
   abertas.forEach(o => {
     const abre = new Date(o.ab);
     if (inicioPeriodo && abre > fimEfetivo) return;
     const inicioClip = inicioPeriodo && inicioPeriodo > abre ? inicioPeriodo : abre;
     if (fimEfetivo <= inicioClip) return;
-    distribuirPorMes(statsPorMes, inicioClip, fimEfetivo, o.os);
-    if ((o.mt || "CORRETIVA").toUpperCase() === "CORRETIVA") distribuirPorMes(statsCorretivaPorMes, inicioClip, fimEfetivo, o.os);
+    intervalosClipados.push({ inicio: inicioClip, fim: fimEfetivo, os: o.os });
+    if ((o.mt || "CORRETIVA").toUpperCase() === "CORRETIVA") distribuirPorMes(statsCorretivaPorMes, inicioClip, fimEfetivo, [o.os]);
   });
+  // quarto achado, mesmo método (comparando com o CHB, frota 60907, julho isolado
+  // com "Status do Veículo: Parado" marcado — 74,17% lá, 73% aqui): duas O.S. na
+  // virada de junho/julho tinham o MESMO horário de liberação (01/07 05:52) — uma
+  // preventiva (30/06 05:45 → 01/07 05:52) com uma corretiva "aninhada" dentro
+  // dela (30/06 18:33 → 01/07 05:52, período inteiramente contido no da preventiva).
+  // Provavelmente a revisão preventiva encontrou um problema e abriram uma O.S.
+  // corretiva por baixo, fechando as duas juntas. Somar a duração das duas conta a
+  // mesma parada da frota duas vezes — ela não fica parada "duas vezes ao mesmo
+  // tempo". Mescla intervalos sobrepostos (a mesma frota, tocando a mesma janela
+  // de tempo) antes de distribuir por mês pra disponibilidade/nº de O.S.
+  intervalosClipados.sort((a, b) => a.inicio - b.inicio);
+  const intervalosMesclados = [];
+  intervalosClipados.forEach(iv => {
+    const ultimo = intervalosMesclados[intervalosMesclados.length - 1];
+    if (ultimo && iv.inicio <= ultimo.fim) {
+      if (iv.fim > ultimo.fim) ultimo.fim = iv.fim;
+      ultimo.os.push(iv.os);
+    } else {
+      intervalosMesclados.push({ inicio: iv.inicio, fim: iv.fim, os: [iv.os] });
+    }
+  });
+  intervalosMesclados.forEach(seg => distribuirPorMes(statsPorMes, seg.inicio, seg.fim, seg.os));
   const mesesOrdenados = Object.keys(statsPorMes).sort();
   const barrasDisponibilidade = mesesOrdenados.map(m => {
     const totalHorasMes = horasDoMesNoPeriodo(m, de, fimEfetivo);
