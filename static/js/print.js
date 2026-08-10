@@ -329,24 +329,39 @@ function imprimirFichaFrota() {
   const fimEfetivo = fimPeriodo < agora() ? fimPeriodo : agora();
   const inicioPeriodo = de ? new Date(de + "T00:00:00") : null;
   const statsPorMes = {}, statsCorretivaPorMes = {};
-  const addMes = (mapa, dataIso, horasParada, osNum) => {
-    const m = (dataIso || "").slice(0, 7);
-    if (!m) return;
-    const s = mapa[m] || (mapa[m] = { horas: 0, os: new Set() });
+  const addMes = (mapa, mesChave, horasParada, osNum) => {
+    const s = mapa[mesChave] || (mapa[mesChave] = { horas: 0, os: new Set() });
     s.horas += horasParada || 0;
     s.os.add(osNum);
   };
-  // segundo achado, mesmo método (comparando com o CHB, frota 60907, 07/04 a
-  // 30/06): uma O.S. de REFORMA abriu 26/02 e só fechou 10/04 — atravessa o
-  // início do período. `hist` (filtrado por dentroPeriodo, que só olha a data de
-  // ABERTURA) não pegava essa O.S. de jeito nenhum, perdendo as ~79h dela que
-  // caem dentro do período (07/04 a 10/04). E o oposto também acontecia: O.S.
-  // que abriram dentro do período mas só fecharam depois do "até" entravam com a
-  // duração INTEIRA, passando do fim. As duas contam certo com o mesmo raciocínio
-  // do fix da O.S. aberta acima: usa a SOBREPOSIÇÃO do intervalo [abertura,
-  // liberação] da O.S. com o período, não só onde ela abriu. Resultado: 730h em
-  // vez de 662h pra abril–junho da 60907, batendo com os 725h do CHB (antes o
-  // erro de ~4% que o usuário reportou vinha inteiro daqui).
+  // terceiro achado, mesmo método (comparando com o CHB, frota 60907: maio
+  // isolado deu 75,86% lá, 70% aqui, mesmo já corrigido o resto): uma O.S. que
+  // atravessa a VIRADA DO MÊS (não só a borda do período, ex.: abriu em maio e
+  // só fechou em junho) jogava a duração inteira no mês em que abriu — igual o
+  // CHB faria se alguém rodasse o relatório dele só pra abril–maio parcial, o
+  // pedaço de junho ficaria de fora e maio ficaria "pesado" demais. distribuirPorMes
+  // fatia o intervalo [início, fim] já cortado pelo período em pedaços por mês
+  // corrente, e cada mês só leva a fatia que realmente é dele.
+  const distribuirPorMes = (mapa, inicio, fim, osNum) => {
+    let cursor = new Date(inicio.getFullYear(), inicio.getMonth(), 1);
+    while (cursor < fim) {
+      const proximoMes = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+      const inicioSeg = cursor > inicio ? cursor : inicio;
+      const fimSeg = proximoMes < fim ? proximoMes : fim;
+      const horasSeg = (fimSeg - inicioSeg) / 3600000;
+      if (horasSeg > 0) {
+        addMes(mapa, cursor.getFullYear() + "-" + String(cursor.getMonth() + 1).padStart(2, "0"), horasSeg, osNum);
+      }
+      cursor = proximoMes;
+    }
+  };
+  // uma O.S. de REFORMA abriu 26/02 e só fechou 10/04 — atravessa o início do
+  // período. `hist` (filtrado por dentroPeriodo, que só olha a data de ABERTURA)
+  // não pegava essa O.S. de jeito nenhum, perdendo as ~79h dela que caem dentro
+  // do período (07/04 a 10/04). E o oposto também acontecia: O.S. que abriram
+  // dentro do período mas só fecharam depois do "até" entravam com a duração
+  // INTEIRA, passando do fim. As duas contam certo usando a SOBREPOSIÇÃO do
+  // intervalo [abertura, liberação] da O.S. com o período, não só onde ela abriu.
   (d.historico || []).forEach(x => {
     if (!x.d) return;
     const abre = new Date(x.d), fecha = x.lib ? new Date(x.lib) : fimEfetivo;
@@ -354,19 +369,17 @@ function imprimirFichaFrota() {
     if (fecha < abre || abre > fimEfetivo) return;
     const inicioClip = inicioPeriodo && inicioPeriodo > abre ? inicioPeriodo : abre;
     const fimClip = fecha > fimEfetivo ? fimEfetivo : fecha;
-    const horasClip = Math.max(0, (fimClip - inicioClip) / 3600000);
-    if (!horasClip) return;
-    addMes(statsPorMes, inicioClip.toISOString(), horasClip, x.os);
-    if ((x.m || "CORRETIVA").toUpperCase() === "CORRETIVA") addMes(statsCorretivaPorMes, inicioClip.toISOString(), horasClip, x.os);
+    if (fimClip <= inicioClip) return;
+    distribuirPorMes(statsPorMes, inicioClip, fimClip, x.os);
+    if ((x.m || "CORRETIVA").toUpperCase() === "CORRETIVA") distribuirPorMes(statsCorretivaPorMes, inicioClip, fimClip, x.os);
   });
   abertas.forEach(o => {
     const abre = new Date(o.ab);
     if (inicioPeriodo && abre > fimEfetivo) return;
     const inicioClip = inicioPeriodo && inicioPeriodo > abre ? inicioPeriodo : abre;
-    const horasNoPeriodo = Math.max(0, (fimEfetivo - inicioClip) / 3600000);
-    if (!horasNoPeriodo) return;
-    addMes(statsPorMes, inicioClip.toISOString(), horasNoPeriodo, o.os);
-    if ((o.mt || "CORRETIVA").toUpperCase() === "CORRETIVA") addMes(statsCorretivaPorMes, inicioClip.toISOString(), horasNoPeriodo, o.os);
+    if (fimEfetivo <= inicioClip) return;
+    distribuirPorMes(statsPorMes, inicioClip, fimEfetivo, o.os);
+    if ((o.mt || "CORRETIVA").toUpperCase() === "CORRETIVA") distribuirPorMes(statsCorretivaPorMes, inicioClip, fimEfetivo, o.os);
   });
   const mesesOrdenados = Object.keys(statsPorMes).sort();
   const barrasDisponibilidade = mesesOrdenados.map(m => {
