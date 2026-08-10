@@ -147,9 +147,23 @@ function dentroPeriodo(dataIso, de, ate) {
   if (ate && d > ate) return false;
   return true;
 }
-function diasNoMes(anoMes) {
+// horas do mês `anoMes` que realmente caem dentro do período efetivo [de, fimEfetivo]
+// — não o mês cheio. Achado comparando com o CHB (frota 60528, 07/04 a 30/04, um
+// período de 24 dias, não o mês de abril inteiro): usar sempre 30×24=720h como
+// denominador para abril dava 93% de disponibilidade; o CHB, calculando sobre os
+// 24 dias pedidos (576h), deu 90,79%. A soma de horas paradas já batia (52,73h
+// aqui contra 53,08h do CHB) — o erro era só o denominador maior que o período
+// de verdade. Interseção do mês com [de, fimEfetivo] resolve os três casos: mês
+// cheio dentro do período (comportamento de antes, sem período definido), mês
+// cortado no início (de cai dentro do mês) e mês cortado no fim (fimEfetivo cai
+// dentro do mês — inclui o caso da O.S. ainda aberta, já tratado em fimEfetivo).
+function horasDoMesNoPeriodo(anoMes, de, fimEfetivo) {
   const [ano, mes] = anoMes.split("-").map(Number);
-  return new Date(ano, mes, 0).getDate();
+  const inicioMes = new Date(ano, mes - 1, 1);
+  const fimMes = new Date(ano, mes, 1);
+  const inicioEfetivo = de ? new Date(Math.max(inicioMes, new Date(de + "T00:00:00"))) : inicioMes;
+  const fimDoMes = fimEfetivo < fimMes ? fimEfetivo : fimMes;
+  return Math.max(0, (fimDoMes - inicioEfetivo) / 3600000);
 }
 function badgeClasse(c) {
   if (!c) return "";
@@ -333,7 +347,7 @@ function imprimirFichaFrota() {
   });
   const mesesOrdenados = Object.keys(statsPorMes).sort();
   const barrasDisponibilidade = mesesOrdenados.map(m => {
-    const totalHorasMes = diasNoMes(m) * 24;
+    const totalHorasMes = horasDoMesNoPeriodo(m, de, fimEfetivo);
     const parada = Math.min(statsPorMes[m].horas, totalHorasMes);
     return { label: m.slice(5, 7) + "/" + m.slice(2, 4), valor: Math.max(0, 100 - parada / totalHorasMes * 100) };
   });
@@ -353,7 +367,7 @@ function imprimirFichaFrota() {
     return { label: m.slice(5, 7) + "/" + m.slice(2, 4), valor: c.horas / c.os.size };
   });
   const barrasMTBF = mesesCorretiva.map(m => {
-    const c = statsCorretivaPorMes[m], totalHorasMes = diasNoMes(m) * 24;
+    const c = statsCorretivaPorMes[m], totalHorasMes = horasDoMesNoPeriodo(m, de, fimEfetivo);
     return { label: m.slice(5, 7) + "/" + m.slice(2, 4), valor: Math.max(0, (totalHorasMes - c.horas) / c.os.size) };
   });
   const media = arr => arr.length ? Math.round(arr.reduce((s, p) => s + p.valor, 0) / arr.length) : null;
@@ -385,12 +399,13 @@ function imprimirFichaFrota() {
     </div>
     <div class="pfoot">Retrabalho considera todas as O.S. corretivas da frota (mínimo 3), sempre sobre o histórico completo —
       abaixo de 40% em verde, de 40% a 70% em âmbar, acima de 70% em vermelho. Disponibilidade = 100% − (horas paradas no mês
-      ÷ horas do mês); a O.S. ainda aberta entra com o tempo parado até agora. MTBF (tempo médio entre falhas) = horas em
-      operação no mês ÷ nº de corretivas; MTTR (tempo médio de reparo) = horas paradas em corretiva no mês ÷ nº de corretivas
-      — os dois só contam O.S. corretiva (preventiva/preditiva/reforma não são falha) e só entram meses com pelo menos uma.
-      O.S. cuja parada atravessa a virada do mês é contada inteira no mês em que abriu. Sistemas e horas por mês (gráfico de
-      colunas superior) somam só as repetições listadas nas páginas anteriores; os 4 gráficos de baixo somam todo o período
-      escolhido.</div>
+      ÷ horas do mês dentro do período escolhido — mês parcial no início/fim do período conta só os dias pedidos, não o mês
+      inteiro); a O.S. ainda aberta entra com o tempo parado até o fim do período (ou até agora, sem período definido). MTBF
+      (tempo médio entre falhas) = horas em operação no mês ÷ nº de corretivas; MTTR (tempo médio de reparo) = horas paradas
+      em corretiva no mês ÷ nº de corretivas — os dois só contam O.S. corretiva (preventiva/preditiva/reforma não são falha)
+      e só entram meses com pelo menos uma. O.S. cuja parada atravessa a virada do mês é contada inteira no mês em que abriu.
+      Sistemas e horas por mês (gráfico de colunas superior) somam só as repetições listadas nas páginas anteriores; os 4
+      gráficos de baixo somam todo o período escolhido.</div>
   </div>`;
 
   document.getElementById("print").innerHTML = h;
