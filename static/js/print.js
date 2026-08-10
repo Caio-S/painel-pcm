@@ -299,10 +299,20 @@ function imprimirFichaFrota() {
 
   // disponibilidade e nº de O.S. por mês: todo o histórico do período (não só as
   // repetições) — a O.S. aberta agora entra no mês em que abriu, contando até o
-  // momento da impressão, desde que caiba no período escolhido. Uma segunda conta,
-  // só das corretivas, alimenta MTBF/MTTR — preventiva/preditiva/reforma não são
-  // falha, então não podem contar como "quebra" nesses dois indicadores (mesma
-  // exclusão que retrabalho/reincidência já fazem em outras partes do relatório).
+  // fim do período escolhido (ou até agora, se o período não tem fim definido).
+  // Uma segunda conta, só das corretivas, alimenta MTBF/MTTR — preventiva/
+  // preditiva/reforma não são falha, então não podem contar como "quebra" nesses
+  // dois indicadores (mesma exclusão que retrabalho/reincidência já fazem em
+  // outras partes do relatório).
+  //
+  // Achado comparando com o relatório oficial do CHB (frota 60528, julho/26): com
+  // "até" = 31/07 mas o relógio real em 10/08, contar a O.S. aberta até agora()
+  // somava 269h de parada só dela (11 dias que na real nem são de julho) e a
+  // disponibilidade do mês saía 54% contra os 84,56% do CHB. Cortando em 31/07
+  // 23:59:59 a mesma conta fecha em 84,77% — a diferença que sobra é só a
+  // diferença de 2 O.S. no total de corretivas do mês (17 aqui, 19 lá).
+  const fimPeriodo = ate ? new Date(ate + "T23:59:59") : agora();
+  const fimEfetivo = fimPeriodo < agora() ? fimPeriodo : agora();
   const statsPorMes = {}, statsCorretivaPorMes = {};
   const addMes = (mapa, dataIso, horasParada, osNum) => {
     const m = (dataIso || "").slice(0, 7);
@@ -317,9 +327,9 @@ function imprimirFichaFrota() {
   });
   abertas.forEach(o => {
     if (!dentroPeriodo(o.ab, de, ate)) return;
-    const horasAteAgora = horas(agora() - new Date(o.ab));
-    addMes(statsPorMes, o.ab, horasAteAgora, o.os);
-    if ((o.mt || "CORRETIVA").toUpperCase() === "CORRETIVA") addMes(statsCorretivaPorMes, o.ab, horasAteAgora, o.os);
+    const horasNoPeriodo = Math.max(0, horas(fimEfetivo - new Date(o.ab)));
+    addMes(statsPorMes, o.ab, horasNoPeriodo, o.os);
+    if ((o.mt || "CORRETIVA").toUpperCase() === "CORRETIVA") addMes(statsCorretivaPorMes, o.ab, horasNoPeriodo, o.os);
   });
   const mesesOrdenados = Object.keys(statsPorMes).sort();
   const barrasDisponibilidade = mesesOrdenados.map(m => {
