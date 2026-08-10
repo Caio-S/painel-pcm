@@ -327,6 +327,7 @@ function imprimirFichaFrota() {
   // diferença de 2 O.S. no total de corretivas do mês (17 aqui, 19 lá).
   const fimPeriodo = ate ? new Date(ate + "T23:59:59") : agora();
   const fimEfetivo = fimPeriodo < agora() ? fimPeriodo : agora();
+  const inicioPeriodo = de ? new Date(de + "T00:00:00") : null;
   const statsPorMes = {}, statsCorretivaPorMes = {};
   const addMes = (mapa, dataIso, horasParada, osNum) => {
     const m = (dataIso || "").slice(0, 7);
@@ -335,15 +336,37 @@ function imprimirFichaFrota() {
     s.horas += horasParada || 0;
     s.os.add(osNum);
   };
-  hist.forEach(x => {
-    addMes(statsPorMes, x.d, x.t, x.os);
-    if ((x.m || "CORRETIVA").toUpperCase() === "CORRETIVA") addMes(statsCorretivaPorMes, x.d, x.t, x.os);
+  // segundo achado, mesmo método (comparando com o CHB, frota 60907, 07/04 a
+  // 30/06): uma O.S. de REFORMA abriu 26/02 e só fechou 10/04 — atravessa o
+  // início do período. `hist` (filtrado por dentroPeriodo, que só olha a data de
+  // ABERTURA) não pegava essa O.S. de jeito nenhum, perdendo as ~79h dela que
+  // caem dentro do período (07/04 a 10/04). E o oposto também acontecia: O.S.
+  // que abriram dentro do período mas só fecharam depois do "até" entravam com a
+  // duração INTEIRA, passando do fim. As duas contam certo com o mesmo raciocínio
+  // do fix da O.S. aberta acima: usa a SOBREPOSIÇÃO do intervalo [abertura,
+  // liberação] da O.S. com o período, não só onde ela abriu. Resultado: 730h em
+  // vez de 662h pra abril–junho da 60907, batendo com os 725h do CHB (antes o
+  // erro de ~4% que o usuário reportou vinha inteiro daqui).
+  (d.historico || []).forEach(x => {
+    if (!x.d) return;
+    const abre = new Date(x.d), fecha = x.lib ? new Date(x.lib) : fimEfetivo;
+    if (inicioPeriodo && fecha < inicioPeriodo) return;
+    if (fecha < abre || abre > fimEfetivo) return;
+    const inicioClip = inicioPeriodo && inicioPeriodo > abre ? inicioPeriodo : abre;
+    const fimClip = fecha > fimEfetivo ? fimEfetivo : fecha;
+    const horasClip = Math.max(0, (fimClip - inicioClip) / 3600000);
+    if (!horasClip) return;
+    addMes(statsPorMes, inicioClip.toISOString(), horasClip, x.os);
+    if ((x.m || "CORRETIVA").toUpperCase() === "CORRETIVA") addMes(statsCorretivaPorMes, inicioClip.toISOString(), horasClip, x.os);
   });
   abertas.forEach(o => {
-    if (!dentroPeriodo(o.ab, de, ate)) return;
-    const horasNoPeriodo = Math.max(0, horas(fimEfetivo - new Date(o.ab)));
-    addMes(statsPorMes, o.ab, horasNoPeriodo, o.os);
-    if ((o.mt || "CORRETIVA").toUpperCase() === "CORRETIVA") addMes(statsCorretivaPorMes, o.ab, horasNoPeriodo, o.os);
+    const abre = new Date(o.ab);
+    if (inicioPeriodo && abre > fimEfetivo) return;
+    const inicioClip = inicioPeriodo && inicioPeriodo > abre ? inicioPeriodo : abre;
+    const horasNoPeriodo = Math.max(0, (fimEfetivo - inicioClip) / 3600000);
+    if (!horasNoPeriodo) return;
+    addMes(statsPorMes, inicioClip.toISOString(), horasNoPeriodo, o.os);
+    if ((o.mt || "CORRETIVA").toUpperCase() === "CORRETIVA") addMes(statsCorretivaPorMes, inicioClip.toISOString(), horasNoPeriodo, o.os);
   });
   const mesesOrdenados = Object.keys(statsPorMes).sort();
   const barrasDisponibilidade = mesesOrdenados.map(m => {
@@ -352,8 +375,15 @@ function imprimirFichaFrota() {
     return { label: m.slice(5, 7) + "/" + m.slice(2, 4), valor: Math.max(0, 100 - parada / totalHorasMes * 100) };
   });
   const barrasOsPorMes = mesesOrdenados.map(m => ({ label: m.slice(5, 7) + "/" + m.slice(2, 4), valor: statsPorMes[m].os.size }));
-  const dispMedia = barrasDisponibilidade.length
-    ? Math.round(barrasDisponibilidade.reduce((s, p) => s + p.valor, 0) / barrasDisponibilidade.length) : null;
+  // média do período: ponderada pelas horas de cada mês, não a média simples das
+  // porcentagens — um mês parcial (ex.: 24 dias de abril) não pode pesar igual a
+  // um mês cheio (31 dias de maio). Comparado com o CHB (frota 60907, abril
+  // parcial a junho inteiro): média simples dava 68%, ponderada bate nos 64,45%
+  // do CHB (64%).
+  const totalHorasParadasPeriodo = mesesOrdenados.reduce((s, m) => s + Math.min(statsPorMes[m].horas, horasDoMesNoPeriodo(m, de, fimEfetivo)), 0);
+  const totalHorasPeriodoTodos = mesesOrdenados.reduce((s, m) => s + horasDoMesNoPeriodo(m, de, fimEfetivo), 0);
+  const dispMedia = totalHorasPeriodoTodos
+    ? Math.round(100 - totalHorasParadasPeriodo / totalHorasPeriodoTodos * 100) : null;
 
   // MTTR = horas paradas em corretiva no mês ÷ nº de corretivas no mês (tempo médio
   // de reparo). MTBF = horas em operação no mês (o resto das horas do mês) ÷ nº de
