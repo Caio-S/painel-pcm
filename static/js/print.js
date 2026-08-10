@@ -16,6 +16,35 @@ function retrabalhoPorFrota() {
   return RT;
 }
 
+/* abre o relatório numa aba nova pra conferir antes de imprimir, em vez de já
+   disparar o diálogo de impressão direto — importante com o painel executivo
+   (gráficos), que dá pra olhar com calma e rolar antes de gastar papel. A aba
+   nova carrega o mesmo style.css do app (as classes .ph/.psum/table.pt/etc. já
+   existem lá, não duplica CSS nenhum) só forçando #print a ficar visível (ele
+   é display:none fora de @media print, porque o padrão antigo era escondê-lo
+   até o navegador entrar em modo impressão). window.open() precisa ser chamado
+   direto do clique (sem await antes) — senão o navegador bloqueia o popup. */
+function abrirPreviaImpressao(html, titulo) {
+  const janela = window.open("", "_blank");
+  if (!janela) { aviso("O navegador bloqueou a nova aba — permita pop-ups pra este site e tente de novo."); return }
+  janela.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+    <title>${esc(titulo)}</title>
+    <link rel="stylesheet" href="${location.origin}/static/css/style.css">
+    <style>
+      body{margin:0;background:#EEF1F5}
+      .barra-previa{position:sticky;top:0;background:#0E2038;padding:10px 16px;display:flex;gap:10px;align-items:center;z-index:10}
+      .barra-previa b{color:#fff;font-size:13px;letter-spacing:.04em}
+      .barra-previa button{margin-left:auto;background:var(--gold);color:#2A2100;border:0;border-radius:4px;padding:8px 16px;font-weight:700;font-size:13px;cursor:pointer}
+      #print{display:block!important;background:#fff;max-width:1400px;margin:16px auto;padding:16px;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+      @media print{.barra-previa{display:none}#print{margin:0;padding:9mm;box-shadow:none}}
+    </style></head>
+    <body>
+      <div class="barra-previa"><b>Pré-visualização — ${esc(titulo)}</b><button onclick="window.print()">Imprimir</button></div>
+      <div id="print">${html}</div>
+    </body></html>`);
+  janela.document.close();
+}
+
 /* ============ gráficos SVG (impressão — sem lib externa) ============ */
 const CORES_GRAFICO = ["#1E4270", "#C6392F", "#B87A0B", "#1F7A5C", "#5B3E9B", "#C9A227", "#8A97A6"];
 const _semDados = () => '<div class="psemdados">sem dados suficientes</div>';
@@ -446,13 +475,12 @@ function imprimirFichaFrota() {
       inteiro); a O.S. ainda aberta entra com o tempo parado até o fim do período (ou até agora, sem período definido). MTBF
       (tempo médio entre falhas) = horas em operação no mês ÷ nº de corretivas; MTTR (tempo médio de reparo) = horas paradas
       em corretiva no mês ÷ nº de corretivas — os dois só contam O.S. corretiva (preventiva/preditiva/reforma não são falha)
-      e só entram meses com pelo menos uma. O.S. cuja parada atravessa a virada do mês é contada inteira no mês em que abriu.
-      Sistemas e horas por mês (gráfico de colunas superior) somam só as repetições listadas nas páginas anteriores; os 4
-      gráficos de baixo somam todo o período escolhido.</div>
+      e só entram meses com pelo menos uma. O.S. cuja parada atravessa a virada do mês tem as horas divididas entre os meses
+      que ela realmente ocupa. Sistemas e horas por mês (gráfico de colunas superior) somam só as repetições listadas nas
+      páginas anteriores; os 4 gráficos de baixo somam todo o período escolhido.</div>
   </div>`;
 
-  document.getElementById("print").innerHTML = h;
-  window.print();
+  abrirPreviaImpressao(h, `Reincidência — frota ${d.codigo}`);
 }
 fhImprimir.onclick = imprimirFichaFrota;
 
