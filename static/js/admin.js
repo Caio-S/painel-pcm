@@ -76,7 +76,7 @@ async function alocRender() {
     } catch (e) { aviso(e.message) }
   };
 }
-btnAloc.onclick = async () => { maskAloc.classList.add("on"); await alocRender() };
+if (btnAloc) btnAloc.onclick = async () => { maskAloc.classList.add("on"); await alocRender() };
 aX.onclick = aFechar.onclick = () => maskAloc.classList.remove("on");
 maskAloc.onclick = e => { if (e.target === maskAloc) maskAloc.classList.remove("on") };
 
@@ -132,7 +132,7 @@ async function contatosRender() {
     } catch (e) { aviso(e.message) }
   };
 }
-btnCont.onclick = async () => { maskCont.classList.add("on"); await contatosRender() };
+if (btnCont) btnCont.onclick = async () => { maskCont.classList.add("on"); await contatosRender() };
 ctX.onclick = ctFechar.onclick = () => maskCont.classList.remove("on");
 maskCont.onclick = e => { if (e.target === maskCont) maskCont.classList.remove("on") };
 
@@ -201,6 +201,6 @@ function qs(obj) {
   const p = Object.entries(obj).filter(([, v]) => v).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`);
   return p.length ? "?" + p.join("&") : "";
 }
-btnCls.onclick = async () => { maskCls.classList.add("on"); await classRender() };
+if (btnCls) btnCls.onclick = async () => { maskCls.classList.add("on"); await classRender() };
 clX.onclick = clFechar.onclick = () => maskCls.classList.remove("on");
 maskCls.onclick = e => { if (e.target === maskCls) maskCls.classList.remove("on") };

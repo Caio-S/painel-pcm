@@ -1,9 +1,10 @@
 import json
 import os
 from datetime import datetime, timedelta
+from functools import wraps
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 from sqlalchemy import inspect, text
 
 import business
@@ -105,9 +106,74 @@ def _versao_do_estatico(endpoint, values):
         pass
 
 
+# =============== login ===============
+# usuários fixos, sem cadastro nem senha por pessoa: são só as duas contas que a
+# empresa decidiu ter (admin e o acesso do pessoal terceirizado que acompanha as
+# O.S. de caminhão). Trocar senha aqui exige um novo deploy — combinado que é
+# aceitável pra esse caso, não vale a pena montar tela de gestão de usuário pra 2 contas.
+USUARIOS = {
+    "admin": {"senha": "crv@123", "role": "admin"},
+    "visitante": {"senha": "crv@123", "role": "visitante"},
+}
+
+
+def _e_caminhao(esp):
+    """Visitante só vê especialidades "CAMINHAO - X" (aplic. vinhaça, apoio
+    indústria, assistência, baú herbicida, bombeiro, borracharia, caçamba,
+    canavieiro, oficina, prancha, roll on/off, transbordo — a lista real do
+    banco). Mesmo teste substring que business.familia() já usa pra CAMINHAO."""
+    return "CAMINH" in (esp or "").upper()
+
+
+@app.before_request
+def _exigir_login():
+    if request.endpoint in ("login", "static", "health"):
+        return
+    if not session.get("usuario"):
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Sessão expirada — faça login de novo."}), 401
+        return redirect(url_for("login"))
+
+
+def admin_obrigatorio(fn):
+    """Bloqueia o endpoint inteiro pra quem não é admin — usado nas telas e ações
+    que não fazem parte do que o visitante (terceirizado, só acompanha O.S. de
+    caminhão) precisa: Contatos, Alocação, Classificação, sync, e qualquer escrita
+    em O.S. (visitante é só leitura)."""
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if session.get("role") != "admin":
+            return jsonify({"error": "Ação restrita ao administrador."}), 403
+        return fn(*args, **kwargs)
+    return wrapper
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    erro = None
+    if request.method == "POST":
+        usuario = (request.form.get("usuario") or "").strip().lower()
+        senha = request.form.get("senha") or ""
+        u = USUARIOS.get(usuario)
+        if u and u["senha"] == senha:
+            session.clear()
+            session.permanent = True
+            session["usuario"] = usuario
+            session["role"] = u["role"]
+            return redirect(url_for("index"))
+        erro = "Usuário ou senha inválidos."
+    return render_template("login.html", erro=erro)
+
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("index.html", usuario=session.get("usuario"), role=session.get("role"))
 
 
 @app.route("/api/health")
@@ -116,6 +182,7 @@ def health():
 
 
 @app.route("/api/sync/atualizar", methods=["POST"])
+@admin_obrigatorio
 def api_sync_atualizar():
     try:
         resultado = sync.sync_abertas_e_frota()
@@ -138,6 +205,7 @@ def api_sync_info():
 
 
 @app.route("/api/sync/limpar-rodando", methods=["POST"])
+@admin_obrigatorio
 def api_sync_limpar_rodando():
     """Uso único (chamado à mão): dispara em background a remoção do histórico já
     sincronizado com situação 'Rodando' — ver sync.disparar_purga_historico_rodando.
@@ -189,6 +257,7 @@ def api_config_get():
 
 
 @app.route("/api/config", methods=["PUT"])
+@admin_obrigatorio
 def api_config_put():
     payload = request.get_json(force=True) or {}
     if "sla" in payload:
@@ -320,10 +389,18 @@ def api_os_list():
         rt = retrabalho.get(item["veic"])
         item["retrabalho"] = rt if rt and rt["n"] >= 3 else None
 
+    # visitante (terceirizado) só acompanha O.S. de caminhão — filtra por último,
+    # depois de toda a reincidência/retrabalho já calculados (esses cálculos usam
+    # o histórico de cada frota isoladamente, não mudam se outras frotas somem
+    # da lista final).
+    if session.get("role") == "visitante":
+        resultado = [item for item in resultado if _e_caminhao(item.get("esp"))]
+
     return jsonify(resultado)
 
 
 @app.route("/api/os/encerradas")
+@admin_obrigatorio
 def api_os_encerradas():
     limite = min(int(request.args.get("limite", 200)), 1000)
     rows = (
@@ -355,6 +432,7 @@ def _get_or_create_detalhe(os_num):
 
 
 @app.route("/api/os/<os_num>", methods=["PATCH"])
+@admin_obrigatorio
 def api_os_patch(os_num):
     if not db.session.get(OsAberta, os_num):
         return jsonify({"error": "O.S. não encontrada."}), 404
@@ -405,6 +483,7 @@ def _parse_datahora(s):
 
 
 @app.route("/api/os/<os_num>/retorno", methods=["POST"])
+@admin_obrigatorio
 def api_os_retorno(os_num):
     if not db.session.get(OsAberta, os_num):
         return jsonify({"error": "O.S. não encontrada."}), 404
@@ -420,6 +499,7 @@ def api_os_retorno(os_num):
 
 
 @app.route("/api/os/<os_num>/cobrar", methods=["POST"])
+@admin_obrigatorio
 def api_os_cobrar(os_num):
     if not db.session.get(OsAberta, os_num):
         return jsonify({"error": "O.S. não encontrada."}), 404
@@ -437,6 +517,7 @@ def api_os_cobrar(os_num):
 
 
 @app.route("/api/os/<os_num>", methods=["DELETE"])
+@admin_obrigatorio
 def api_os_excluir(os_num):
     d = db.session.get(OsDetalhe, os_num)
     if d:
@@ -453,9 +534,14 @@ def api_os_excluir(os_num):
 
 @app.route("/api/frota")
 def api_frota_list():
+    """Além da tela de Alocação (admin), alimenta a busca de "Histórico de frota"
+    — por isso não é @admin_obrigatorio, só filtrada: visitante só enxerga
+    caminhão aqui, igual em GET /api/os."""
     aloc_por_frota = {a.codigo: a for a in FrotaAlocacao.query.all()}
     out = []
     for f in Frota.query.order_by(Frota.codigo).all():
+        if session.get("role") == "visitante" and not _e_caminhao(f.especialidade):
+            continue
         d = f.to_dict()
         a = aloc_por_frota.get(f.codigo)
         d["aloc"] = a.to_dict() if a else {"c": f.codigo, "ativ": "", "fr": "", "resp": "", "loc": ""}
@@ -471,6 +557,8 @@ def _aloc_dict(codigo):
 @app.route("/api/frota/<codigo>/historico")
 def api_frota_historico(codigo):
     f = db.session.get(Frota, codigo)
+    if session.get("role") == "visitante" and not _e_caminhao(f.especialidade if f else ""):
+        return jsonify({"error": "Frota fora do escopo desse usuário."}), 403
     hist = OsHistorico.query.filter_by(veic=codigo).order_by(OsHistorico.data_abertura.desc()).all()
     abertas = OsAberta.query.filter_by(veic=codigo).order_by(OsAberta.ab.desc()).all()
     cfg = _config()
@@ -524,6 +612,7 @@ def api_frota_historico(codigo):
 
 
 @app.route("/api/frota/<codigo>/alocacao", methods=["PUT"])
+@admin_obrigatorio
 def api_frota_alocacao(codigo):
     payload = request.get_json(force=True) or {}
     ativ = (payload.get("ativ") or "").strip()
@@ -544,6 +633,7 @@ def api_frota_alocacao(codigo):
 
 
 @app.route("/api/frota/alocacao/bulk", methods=["POST"])
+@admin_obrigatorio
 def api_frota_alocacao_bulk():
     payload = request.get_json(force=True) or {}
     codigos = payload.get("codigos") or []
@@ -564,6 +654,7 @@ def api_frota_alocacao_bulk():
 
 
 @app.route("/api/frota/alocacao/limpar", methods=["POST"])
+@admin_obrigatorio
 def api_frota_alocacao_limpar():
     payload = request.get_json(force=True) or {}
     codigos = payload.get("codigos") or []
@@ -576,11 +667,13 @@ def api_frota_alocacao_limpar():
 
 
 @app.route("/api/contatos", methods=["GET"])
+@admin_obrigatorio
 def api_contatos_list():
     return jsonify([c.to_dict() for c in Contato.query.order_by(Contato.nome).all()])
 
 
 @app.route("/api/contatos", methods=["PUT"])
+@admin_obrigatorio
 def api_contatos_upsert():
     payload = request.get_json(force=True) or {}
     nome = (payload.get("nome") or "").strip().upper()
@@ -605,6 +698,7 @@ def api_contatos_upsert():
 
 
 @app.route("/api/contatos/<path:nome>", methods=["DELETE"])
+@admin_obrigatorio
 def api_contatos_delete(nome):
     c = db.session.get(Contato, (nome or "").strip().upper())
     if c:
@@ -639,6 +733,7 @@ def _historico_e_abertas_para_classificacao():
 
 
 @app.route("/api/classificacao/pendentes")
+@admin_obrigatorio
 def api_classificacao_pendentes():
     fam = request.args.get("fam") or None
     busca = request.args.get("busca") or None
@@ -647,17 +742,20 @@ def api_classificacao_pendentes():
 
 
 @app.route("/api/classificacao/cobertura")
+@admin_obrigatorio
 def api_classificacao_cobertura():
     historico, abertas = _historico_e_abertas_para_classificacao()
     return jsonify(business.cobertura(historico, abertas))
 
 
 @app.route("/api/regras", methods=["GET"])
+@admin_obrigatorio
 def api_regras_list():
     return jsonify(_regras_customizadas())
 
 
 @app.route("/api/regras", methods=["POST"])
+@admin_obrigatorio
 def api_regras_criar():
     payload = request.get_json(force=True) or {}
     termo = business.norm(payload.get("termo") or "")
@@ -674,6 +772,7 @@ def api_regras_criar():
 
 
 @app.route("/api/regras/<int:regra_id>", methods=["DELETE"])
+@admin_obrigatorio
 def api_regras_excluir(regra_id):
     r = db.session.get(RegraClassificacao, regra_id)
     if r:

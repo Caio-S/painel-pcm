@@ -167,7 +167,7 @@ async function modoTV(on) {
     if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => { });
   }
 }
-btnTV.onclick = () => modoTV(true);
+if (btnTV) btnTV.onclick = () => modoTV(true);
 tvExit.onclick = () => modoTV(false);
 document.addEventListener("keydown", e => {
   if (document.body.dataset.mode !== "tv") return;

@@ -569,6 +569,6 @@ function imprimirDisponibilidade() {
   document.getElementById("print").innerHTML = paginas;
   window.print();
 }
-btnDisp.onclick = async () => { if (!FROTA_LIST.length) FROTA_LIST = await api('/frota'); imprimirDisponibilidade(); };
+if (btnDisp) btnDisp.onclick = async () => { if (!FROTA_LIST.length) FROTA_LIST = await api('/frota'); imprimirDisponibilidade(); };
 
 btnPrint.onclick = imprimir;

@@ -1,7 +1,9 @@
 /* ============ api ============ */
 const $ = id => document.getElementById(id);
+const ROLE = document.body.dataset.role;
 async function api(path, opts) {
   const res = await fetch('/api' + path, { headers: { 'Content-Type': 'application/json' }, ...opts });
+  if (res.status === 401) { window.location.href = '/login'; throw new Error('Sessão expirada'); }
   if (!res.ok) {
     let msg = 'Erro ' + res.status;
     try { const j = await res.json(); if (j.error) msg = j.error; } catch (_) {}
@@ -230,10 +232,10 @@ function card(o) {
      ${rbox}${pend}
      <div class="ultimo">${ur ? `<b>Último retorno (${fmt(ur.em)}${ur.autor ? " · " + esc(ur.autor) : ""}):</b> ${esc(ur.txt)}` : "<b>Nenhum retorno registrado.</b> A contagem corre desde a abertura."}</div>
     </div>
-    <div class="os-actions">
+    ${ROLE === "admin" ? `<div class="os-actions">
      <button class="btn btn-dark" data-act="ret" data-os="${o.os}">Registrar retorno</button>
      <button class="btn btn-line" data-act="det" data-os="${o.os}">Detalhar pendência</button>
-     ${rc ? `<button class="btn btn-red" style="background:var(--red);color:#fff" data-act="cob" data-os="${o.os}">Cobrar reincidência</button>` : ""}</div>
+     ${rc ? `<button class="btn btn-red" style="background:var(--red);color:#fff" data-act="cob" data-os="${o.os}">Cobrar reincidência</button>` : ""}</div>` : ""}
    </div>
   </article>`;
 }
@@ -578,7 +580,7 @@ function relogio() {
   const d = agora(); clk.textContent = d.toLocaleTimeString("pt-BR");
   clkd.textContent = d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" });
 }
-btnAtualizar.onclick = atualizarAgora;
+if (btnAtualizar) btnAtualizar.onclick = atualizarAgora;
 chSemH.onclick = () => { filtro.semH = !filtro.semH; render() };
 document.querySelectorAll(".kpi[data-filtro]").forEach(el => el.onclick = () => {
   const k = el.dataset.filtro;
@@ -593,8 +595,19 @@ fModelo.onchange = e => { filtro.mod = e.target.value; render() };
 fTipo.onchange = e => { filtro.tp = e.target.value; render() };
 fClasse.onchange = e => { filtro.classe = e.target.value; render() };
 fBusca.oninput = e => { filtro.busca = e.target.value; render() };
-fGroupBy.onchange = async e => { CONFIG.groupBy = e.target.value; await api('/config', { method: 'PUT', body: JSON.stringify({ groupBy: CONFIG.groupBy }) }); render() };
-document.getElementById("sla").onchange = async e => { const x = parseFloat(e.target.value); if (x > 0) { CONFIG.sla = x; await api('/config', { method: 'PUT', body: JSON.stringify({ sla: x }) }); render() } };
+// visitante não pode gravar config global (PUT /api/config é admin-only) — muda
+// a visão dele na hora mesmo assim, só não persiste pros outros usuários.
+fGroupBy.onchange = async e => {
+  CONFIG.groupBy = e.target.value; render();
+  try { await api('/config', { method: 'PUT', body: JSON.stringify({ groupBy: CONFIG.groupBy }) }) } catch (_) { }
+};
+document.getElementById("sla").onchange = async e => {
+  const x = parseFloat(e.target.value);
+  if (x > 0) {
+    CONFIG.sla = x; render();
+    try { await api('/config', { method: 'PUT', body: JSON.stringify({ sla: x }) }) } catch (_) { }
+  }
+};
 mX.onclick = () => mask.classList.remove("on");
 mask.onclick = e => { if (e.target === mask) mask.classList.remove("on") };
 mSalvar.onclick = salvarModal;
