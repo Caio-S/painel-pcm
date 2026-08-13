@@ -580,7 +580,7 @@ function relogio() {
   const d = agora(); clk.textContent = d.toLocaleTimeString("pt-BR");
   clkd.textContent = d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" });
 }
-if (btnAtualizar) btnAtualizar.onclick = atualizarAgora;
+if (window.btnAtualizar) btnAtualizar.onclick = atualizarAgora;
 chSemH.onclick = () => { filtro.semH = !filtro.semH; render() };
 document.querySelectorAll(".kpi[data-filtro]").forEach(el => el.onclick = () => {
   const k = el.dataset.filtro;
